@@ -24,9 +24,7 @@ This repository serves two primary purposes:
 
 Check out the interactive map app here:  
 
-👉 **[Insert Your GitHub Pages URL Here]**  
-
-*(e.g., `https://<your-username>.github.io/<your-repo-name>/`)*
+👉 *[KST Sokolka Selec](https://herrscaryterry.github.io/hiking_map_sokolka_selec/)*  
 
 
 
