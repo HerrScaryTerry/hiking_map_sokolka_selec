@@ -58,7 +58,7 @@
         }
 
         /* =====================================================
-           Mobilný banner (zobrazí sa len na malých obrazovkách)
+           Mobilný banner
            ===================================================== */
 
         #mobileNoticeBanner {
@@ -192,7 +192,7 @@
         }
 
         /* =====================================================
-           Mapa
+           Mapa & Interaktívna prekryvná vrstva pre mobily
            ===================================================== */
 
         #mapContainer {
@@ -208,6 +208,29 @@
             width: 100%;
             height: 100%;
             background: #dce4e8;
+        }
+
+        /* Prekryvná vrstva, ktorá zabraňuje zachyteniu skrolovania stránky mobilu */
+        #mapOverlay {
+            display: none; /* Zapne sa len na dotykových zariadeniach */
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            color: #ffffff;
+            z-index: 2500;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            font-weight: 700;
+            font-size: 15px;
+            backdrop-filter: blur(1px);
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        #mapOverlay.hidden {
+            display: none !important;
         }
 
         /* =====================================================
@@ -286,18 +309,17 @@
             transition: transform 0.15s ease, background-color 0.15s ease;
         }
 
-        .startPin:hover {
-            background: var(--route-hover-color);
-            transform: scale(1.25);
-        }
-
         /* =====================================================
            Mobilné zobrazenie
            ===================================================== */
 
         @media (max-width: 750px) {
             #mobileNoticeBanner {
-                display: block; /* Zobtriť banner na mobiloch */
+                display: block;
+            }
+
+            #mapOverlay {
+                display: flex; /* Zobrazí vrstvu na mobiloch štandardne */
             }
 
             #header {
@@ -356,7 +378,7 @@
 
         <!-- Mobilný upozorňujúci banner -->
         <div id="mobileNoticeBanner">
-            Mapa sa nezobrazuje ideálne? <a id="fullMapLink" href="#" target="_blank">Otvoriť na celej obrazovke</a>
+            Chcete mapu na celú obrazovku? <a id="fullMapLink" href="#" target="_blank">Otvoriť</a>
         </div>
 
         <header id="header">
@@ -421,6 +443,11 @@
 
             <div id="map"></div>
 
+            <!-- Interaktívny predel pre mobily, aby sa dalo skrolovať okolo mapy -->
+            <div id="mapOverlay">
+                <span>📍 Ťuknutím aktivujete mapu<br><small style="font-weight: normal; opacity: 0.9;">(Umožní plynulé skrolovanie stránky)</small></span>
+            </div>
+
         </main>
 
     </div>
@@ -432,6 +459,19 @@
            Odkaz na celú obrazovku pre mobilný banner
            ===================================================== */
         document.getElementById("fullMapLink").href = window.location.href;
+
+        /* Odomknutie mapy pri dotyku na mobilnom zariadení */
+        const mapOverlay = document.getElementById("mapOverlay");
+        const mapContainer = document.getElementById("mapContainer");
+
+        if (mapOverlay) {
+            mapOverlay.addEventListener("click", function () {
+                mapOverlay.classList.add("hidden");
+            });
+
+            // Ak používateľ scrolloval preč z mapy, môžeme prekryvne okno nechať zapnúť alebo ho nechať odomknuté.
+            // Tu po ťuknutí zostane mapa plne ovládateľná.
+        }
 
         /* =====================================================
            Konfigurácia
@@ -478,8 +518,16 @@
 
         const map = L.map("map", {
             zoomControl: true,
-            preferCanvas: true
+            preferCanvas: true,
+            dragging: !L.Browser.mobile, // Na mobile sa aktivuje až po klepnutí, alebo štandardne s dvoma prstami
+            tap: !L.Browser.mobile
         }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
+        // Ochrana proti uväzneniu prsta na mobile: Leaflet na mobile štandardne vyžaduje dva prsty na posun mapy, 
+        // čo zabraňuje zablokovaniu skrolovania celej Google Sites stránky.
+        if (L.Browser.mobile && map.tapHold) {
+            map.tapHold.disable();
+        }
 
         const baseMap = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             minZoom: 2,
@@ -491,6 +539,24 @@
 
         const displayedLayers = L.featureGroup();
         displayedLayers.addTo(map);
+
+        /* Povoľ interakciu s mapou po kliknutí na náš prekryvný div */
+        mapOverlay.addEventListener("click", function () {
+            mapOverlay.classList.add("hidden");
+            map.dragging.enable();
+            map.touchZoom.enable();
+            map.doubleClickZoom.enable();
+            map.scrollWheelZoom.enable();
+            if (map.boxZoom) map.boxZoom.enable();
+        });
+
+        // Zo začiatku na mobile zakážeme pan/drag kým užívateľ vyslovene neťukne na prekryv
+        if (window.innerWidth <= 750) {
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.scrollWheelZoom.disable();
+        }
 
         /* =====================================================
            Ikona pre štartový bod
