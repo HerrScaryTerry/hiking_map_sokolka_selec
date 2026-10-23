@@ -1,0 +1,1 @@
+# hiking_map_sokolka_selec
