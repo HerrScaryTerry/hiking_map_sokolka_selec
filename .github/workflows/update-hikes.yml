@@ -1,0 +1,45 @@
+name: Update hiking data
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "gpx/**"
+      - "scripts/generate_index.py"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-hikes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Generate hikes.json
+        run: python scripts/generate_index.py
+
+      - name: Commit hikes.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add hikes.json
+
+          if git diff --cached --quiet; then
+            echo "hikes.json has not changed."
+            exit 0
+          fi
+
+          git commit -m "Automatically update hiking data"
+          git push
