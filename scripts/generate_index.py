@@ -4,6 +4,7 @@ import json
 import math
 import xml.etree.ElementTree as ET
 
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -498,6 +499,412 @@ def read_trackpoints(
                 "elevation": elevation,
                 "timestamp": timestamp
             }
+        )
+
+    return points
+
+
+# ============================================================
+# Activity statistics
+# ============================================================
+
+def calculate_statistics(
+    points: list[dict]
+) -> dict:
+    """
+    Calculate statistics from the original GPX points.
+
+    Distance:
+        Haversine distance between consecutive points.
+
+    Elevation:
+        Sum of positive/negative differences between consecutive
+        points with elevation data.
+
+    Duration:
+        Difference between the first and final valid trackpoint
+        timestamp. This represents elapsed activity time.
+    """
+
+    total_distance_metres = 0.0
+    total_elevation_gain_metres = 0.0
+    total_elevation_loss_metres = 0.0
+
+    for index in range(
+        1,
+        len(points)
+    ):
+
+        previous_point = points[index - 1]
+        current_point = points[index]
+
+        total_distance_metres += haversine_distance(
+            previous_point["latitude"],
+            previous_point["longitude"],
+            current_point["latitude"],
+            current_point["longitude"]
+        )
+
+        previous_elevation = (
+            previous_point["elevation"]
+        )
+
+        current_elevation = (
+            current_point["elevation"]
+        )
+
+        if (
+            previous_elevation is not None
+            and current_elevation is not None
+        ):
+
+            elevation_difference = (
+                current_elevation
+                -
+                previous_elevation
+            )
+
+            if elevation_difference > 0:
+
+                total_elevation_gain_metres += (
+                    elevation_difference
+                )
+
+            elif elevation_difference < 0:
+
+                total_elevation_loss_metres += abs(
+                    elevation_difference
+                )
+
+    timestamps = [
+        point["timestamp"]
+        for point in points
+        if point["timestamp"] is not None
+    ]
+
+    duration_seconds = 0
+
+    if len(timestamps) >= 2:
+
+        duration_seconds = max(
+            0,
+            round(
+                (
+                    timestamps[-1]
+                    -
+                    timestamps[0]
+                ).total_seconds()
+            )
+        )
+
+    elevations = [
+        point["elevation"]
+        for point in points
+        if point["elevation"] is not None
+    ]
+
+    minimum_elevation = (
+        min(elevations)
+        if elevations
+        else None
+    )
+
+    maximum_elevation = (
+        max(elevations)
+        if elevations
+        else None
+    )
+
+    return {
+        "distanceKilometers": round(
+            total_distance_metres / 1000,
+            2
+        ),
+        "elevationGainMeters": round(
+            total_elevation_gain_metres
+        ),
+        "elevationLossMeters": round(
+            total_elevation_loss_metres
+        ),
+        "durationSeconds": duration_seconds,
+        "minimumElevationMeters": (
+            round(minimum_elevation)
+            if minimum_elevation is not None
+            else None
+        ),
+        "maximumElevationMeters": (
+            round(maximum_elevation)
+            if maximum_elevation is not None
+            else None
+        )
+    }
+
+
+# ============================================================
+# Extract data from one GPX file
+# ============================================================
+
+def extract_gpx_file_data(
+    file_path: Path
+) -> dict:
+    """
+    Extract raw trackpoints and metadata from one GPX file.
+    """
+
+    xml_tree = ET.parse(file_path)
+    root = xml_tree.getroot()
+
+    trackpoints = read_trackpoints(root)
+
+    if len(trackpoints) < 2:
+
+        raise ValueError(
+            "GPX does not contain at least two valid trackpoints."
+        )
+
+    activity_datetime = get_metadata_datetime(
+        root
+    )
+
+    if activity_datetime is None:
+
+        timestamps = [
+            point["timestamp"]
+            for point in trackpoints
+            if point["timestamp"] is not None
+        ]
+
+        if timestamps:
+            activity_datetime = timestamps[0]
+
+    activity_name = get_activity_name(
+        root,
+        file_path
+    )
+
+    activity_type = get_activity_type(
+        root
+    )
+
+    start_timestamp = None
+    timestamps = [
+        point["timestamp"]
+        for point in trackpoints
+        if point["timestamp"] is not None
+    ]
+    if timestamps:
+        start_timestamp = timestamps[0]
+    elif activity_datetime:
+        start_timestamp = activity_datetime
+
+    if activity_datetime is not None:
+
+        activity_date = (
+            activity_datetime
+            .date()
+            .isoformat()
+        )
+
+        activity_year = (
+            activity_datetime.year
+        )
+
+        activity_timestamp = (
+            activity_datetime.isoformat()
+        )
+
+    else:
+
+        activity_date = None
+        activity_year = None
+        activity_timestamp = None
+
+    return {
+        "file": file_path.name,
+        "name": activity_name,
+        "type": activity_type,
+        "datetime": activity_datetime,
+        "start_timestamp": start_timestamp,
+        "date": activity_date,
+        "year": activity_year,
+        "timestamp": activity_timestamp,
+        "trackpoints": trackpoints
+    }
+
+
+# ============================================================
+# Main process
+# ============================================================
+
+def main() -> None:
+    """
+    Parse all GPX files, merge same-day hikes, and generate hikes.json.
+    """
+
+    if not GPX_FOLDER.exists():
+
+        raise FileNotFoundError(
+            f"GPX folder does not exist: {GPX_FOLDER}"
+        )
+
+    gpx_files = sorted(
+        GPX_FOLDER.glob("*.gpx")
+    )
+
+    extracted_items: list[dict] = []
+    errors: list[dict] = []
+
+    print(
+        f"Found {len(gpx_files)} GPX file(s)."
+    )
+
+    for file_path in gpx_files:
+
+        try:
+
+            item = extract_gpx_file_data(
+                file_path
+            )
+
+            extracted_items.append(item)
+
+            print(
+                "Extracted: "
+                f"{file_path.name} -> "
+                f"{item['name']} | "
+                f"{item['date']} | "
+                f"{len(item['trackpoints'])} points"
+            )
+
+        except ET.ParseError as error:
+
+            errors.append(
+                {
+                    "file": file_path.name,
+                    "error": (
+                        "Invalid GPX XML: "
+                        f"{error}"
+                    )
+                }
+            )
+
+            print(
+                f"ERROR: Invalid XML in "
+                f"{file_path.name}: {error}"
+            )
+
+        except Exception as error:
+
+            errors.append(
+                {
+                    "file": file_path.name,
+                    "error": str(error)
+                }
+            )
+
+            print(
+                f"ERROR: Could not process "
+                f"{file_path.name}: {error}"
+            )
+
+    # Group extracted items by date
+    date_groups: defaultdict[str, list[dict]] = defaultdict(list)
+    ungrouped_counter = 0
+
+    for item in extracted_items:
+
+        date_key = item["date"]
+
+        if date_key:
+            date_groups[date_key].append(item)
+        else:
+            date_groups[f"__nodate_{ungrouped_counter}__"].append(item)
+            ungrouped_counter += 1
+
+    activities: list[dict] = []
+
+    for date_key, group in date_groups.items():
+
+        # Sort items in the group chronologically by start timestamp
+        sorted_group = sorted(
+            group,
+            key=lambda x: x["start_timestamp"] or datetime.min
+        )
+
+        # Combine trackpoints
+        combined_trackpoints = []
+        for item in sorted_group:
+            combined_trackpoints.extend(item["trackpoints"])
+
+        # Pick the name and file from the first (earliest) item of the day
+        first_item = sorted_group[0]
+
+        # Calculate statistics on the combined trackpoints
+        statistics = calculate_statistics(
+            combined_trackpoints
+        )
+
+        original_coordinates = [
+            (
+                point["latitude"],
+                point["longitude"]
+            )
+            for point in combined_trackpoints
+        ]
+
+        simplified_coordinates = simplify_coordinates(
+            original_coordinates,
+            SIMPLIFICATION_TOLERANCE_METERS
+        )
+
+        output_coordinates = [
+            [
+                round(
+                    latitude,
+                    COORDINATE_DECIMALS
+                ),
+                round(
+                    longitude,
+                    COORDINATE_DECIMALS
+                )
+            ]
+            for latitude, longitude
+            in simplified_coordinates
+        ]
+
+        activity = {
+            "file": first_item["file"],
+            "name": first_item["name"],
+            "date": first_item["date"],
+            "year": first_item["year"],
+            "timestamp": first_item["timestamp"],
+            "type": first_item["type"],
+            "distanceKilometers":
+                statistics["distanceKilometers"],
+            "elevationGainMeters":
+                statistics["elevationGainMeters"],
+            "elevationLossMeters":
+                statistics["elevationLossMeters"],
+            "durationSeconds":
+                statistics["durationSeconds"],
+            "minimumElevationMeters":
+                statistics["minimumElevationMeters"],
+            "maximumElevationMeters":
+                statistics["maximumElevationMeters"],
+            "originalPointCount":
+                len(original_coordinates),
+            "displayPointCount":
+                len(output_coordinates),
+            "coordinates":
+                output_coordinates
+        }
+
+        activities.append(activity)
+
+        if len(sorted_group) > 1:
+            print(
+                f"Merged {len(sorted_group)} file(s) for date {first_item['date']} under name -> "
+                     }
         )
 
     return points
