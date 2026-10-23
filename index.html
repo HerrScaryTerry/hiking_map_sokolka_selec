@@ -76,6 +76,7 @@
             justify-content: space-between;
             gap: 15px;
             margin-bottom: 10px;
+            flex-wrap: wrap;
         }
 
         #pageTitle {
@@ -84,24 +85,27 @@
             line-height: 1.2;
             font-weight: 700;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
-        #filterContainer {
+        #filtersWrapper {
             display: flex;
             align-items: center;
-            gap: 8px;
-            flex-shrink: 0;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
-        #filterContainer label {
+        .filterGroup {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filterGroup label {
             font-size: 13px;
             font-weight: 700;
         }
 
-        #yearFilter {
-            min-width: 120px;
+        select.appSelect {
             height: 36px;
             padding: 6px 10px;
             border: 1px solid #b8c1ca;
@@ -112,9 +116,18 @@
             cursor: pointer;
         }
 
-        #yearFilter:focus {
+        select.appSelect:focus {
             outline: 2px solid rgba(214, 40, 40, 0.2);
             border-color: var(--route-color);
+        }
+
+        #yearFilter {
+            min-width: 110px;
+        }
+
+        #hikeFilter {
+            min-width: 180px;
+            max-width: 260px;
         }
 
         /* =====================================================
@@ -259,13 +272,29 @@
            Mobilné zobrazenie
            ===================================================== */
 
-        @media (max-width: 700px) {
+        @media (max-width: 750px) {
             #header {
                 padding: 8px 10px;
             }
 
             #headerTop {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
                 margin-bottom: 8px;
+            }
+
+            #filtersWrapper {
+                justify-content: space-between;
+            }
+
+            .filterGroup {
+                flex: 1;
+            }
+
+            #hikeFilter {
+                max-width: none;
+                width: 100%;
             }
 
             #pageTitle {
@@ -306,20 +335,20 @@
                     KST Sokolka Selec
                 </h1>
 
-                <div id="filterContainer">
+                <div id="filtersWrapper">
+                    <div class="filterGroup">
+                        <label for="yearFilter">Rok:</label>
+                        <select id="yearFilter" class="appSelect">
+                            <option value="all">Všetky roky</option>
+                        </select>
+                    </div>
 
-                    <label for="yearFilter">
-                        Rok:
-                    </label>
-
-                    <select id="yearFilter">
-
-                        <option value="all">
-                            Všetky roky
-                        </option>
-
-                    </select>
-
+                    <div class="filterGroup">
+                        <label for="hikeFilter">Túra:</label>
+                        <select id="hikeFilter" class="appSelect">
+                            <option value="all">Všetky túry</option>
+                        </select>
+                    </div>
                 </div>
 
             </div>
@@ -327,63 +356,23 @@
             <div id="statistics">
 
                 <div class="statisticCard">
-
-                    <div class="statisticLabel">
-                        Počet túr
-                    </div>
-
-                    <div
-                        id="activityCount"
-                        class="statisticValue"
-                    >
-                        0
-                    </div>
-
+                    <div class="statisticLabel">Počet túr</div>
+                    <div id="activityCount" class="statisticValue">0</div>
                 </div>
 
                 <div class="statisticCard">
-
-                    <div class="statisticLabel">
-                        Celková vzdialenosť
-                    </div>
-
-                    <div
-                        id="totalDistance"
-                        class="statisticValue"
-                    >
-                        0,0 km
-                    </div>
-
+                    <div class="statisticLabel">Celková vzdialenosť</div>
+                    <div id="totalDistance" class="statisticValue">0,0 km</div>
                 </div>
 
                 <div class="statisticCard">
-
-                    <div class="statisticLabel">
-                        Celkové stúpanie
-                    </div>
-
-                    <div
-                        id="totalElevation"
-                        class="statisticValue"
-                    >
-                        0 m
-                    </div>
-
+                    <div class="statisticLabel">Celkové stúpanie</div>
+                    <div id="totalElevation" class="statisticValue">0 m</div>
                 </div>
 
                 <div class="statisticCard">
-
-                    <div class="statisticLabel">
-                        Celkový čas
-                    </div>
-
-                    <div
-                        id="totalTime"
-                        class="statisticValue"
-                    >
-                        0 h 00 min
-                    </div>
-
+                    <div class="statisticLabel">Celkový čas</div>
+                    <div id="totalTime" class="statisticValue">0 h 00 min</div>
                 </div>
 
             </div>
@@ -411,44 +400,29 @@
            Konfigurácia
            ===================================================== */
 
-        const DEFAULT_CENTER = [
-            48.55,
-            17.50
-        ];
-
+        const DEFAULT_CENTER = [48.55, 17.50];
         const DEFAULT_ZOOM = 9;
         const MAX_FIT_ZOOM = 14;
 
         const ROUTE_COLOR = "#d62828";
         const ROUTE_HOVER_COLOR = "#9d0208";
 
-        const CURRENT_YEAR =
-            new Date().getFullYear();
+        const CURRENT_YEAR = new Date().getFullYear();
 
         /* =====================================================
            HTML elementy
            ===================================================== */
 
-        const yearFilter =
-            document.getElementById("yearFilter");
+        const yearFilter = document.getElementById("yearFilter");
+        const hikeFilter = document.getElementById("hikeFilter");
 
-        const activityCountElement =
-            document.getElementById("activityCount");
+        const activityCountElement = document.getElementById("activityCount");
+        const totalDistanceElement = document.getElementById("totalDistance");
+        const totalElevationElement = document.getElementById("totalElevation");
+        const totalTimeElement = document.getElementById("totalTime");
 
-        const totalDistanceElement =
-            document.getElementById("totalDistance");
-
-        const totalElevationElement =
-            document.getElementById("totalElevation");
-
-        const totalTimeElement =
-            document.getElementById("totalTime");
-
-        const loadingMessage =
-            document.getElementById("loadingMessage");
-
-        const errorMessage =
-            document.getElementById("errorMessage");
+        const loadingMessage = document.getElementById("loadingMessage");
+        const errorMessage = document.getElementById("errorMessage");
 
         /* =====================================================
            Kontrola Leaflet
@@ -456,52 +430,29 @@
 
         if (typeof L === "undefined") {
             loadingMessage.style.display = "none";
-
-            errorMessage.textContent =
-                "Knižnica Leaflet sa nenačítala. "
-                + "Skontrolujte pripojenie alebo blokovanie CDN.";
-
+            errorMessage.textContent = "Knižnica Leaflet sa nenačítala. Skontrolujte pripojenie alebo blokovanie CDN.";
             errorMessage.style.display = "block";
-
-            throw new Error(
-                "Leaflet library is not loaded."
-            );
+            throw new Error("Leaflet library is not loaded.");
         }
 
         /* =====================================================
            Inicializácia mapy
            ===================================================== */
 
-        const map = L.map(
-            "map",
-            {
-                zoomControl: true,
-                preferCanvas: true
-            }
-        ).setView(
-            DEFAULT_CENTER,
-            DEFAULT_ZOOM
-        );
+        const map = L.map("map", {
+            zoomControl: true,
+            preferCanvas: true
+        }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
-        const baseMap = L.tileLayer(
-            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            {
-                minZoom: 2,
-                maxZoom: 19,
-
-                attribution:
-                    '&copy; '
-                    + '<a href="https://www.openstreetmap.org/copyright">'
-                    + 'OpenStreetMap'
-                    + '</a>'
-            }
-        );
+        const baseMap = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            minZoom: 2,
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        });
 
         baseMap.addTo(map);
 
-        const displayedLayers =
-            L.featureGroup();
-
+        const displayedLayers = L.featureGroup();
         displayedLayers.addTo(map);
 
         /* =====================================================
@@ -520,20 +471,17 @@
            ===================================================== */
 
         let activities = [];
+        // Mapovanie pre prepojenie výberu v selecte s konkrétnou vrstvou trasy/markeru
+        let activityLayerMap = new Map();
 
         /* =====================================================
-           Formátovanie
+           Formátowanie
            ===================================================== */
 
         function escapeHtml(value) {
-            if (
-                value === null
-                ||
-                value === undefined
-            ) {
+            if (value === null || value === undefined) {
                 return "";
             }
-
             return String(value)
                 .replaceAll("&", "&amp;")
                 .replaceAll("<", "&lt;")
@@ -546,29 +494,15 @@
             if (!dateValue) {
                 return "Neznámy";
             }
-
-            const dateParts =
-                String(dateValue).split("-");
-
+            const dateParts = String(dateValue).split("-");
             if (dateParts.length !== 3) {
                 return String(dateValue);
             }
-
-            return (
-                dateParts[2]
-                + ". "
-                + dateParts[1]
-                + ". "
-                + dateParts[0]
-            );
+            return dateParts[2] + ". " + dateParts[1] + ". " + dateParts[0];
         }
 
         function formatActivityType(type) {
-            const normalizedType =
-                String(type || "")
-                    .trim()
-                    .toLowerCase();
-
+            const normalizedType = String(type || "").trim().toLowerCase();
             const translations = {
                 "walking": "Chôdza",
                 "hiking": "Turistika",
@@ -579,70 +513,28 @@
                 "mountain_biking": "Horská cyklistika",
                 "mountain biking": "Horská cyklistika"
             };
-
-            return (
-                translations[normalizedType]
-                ||
-                type
-                ||
-                "Neznámy"
-            );
+            return translations[normalizedType] || type || "Neznámy";
         }
 
         function formatDistance(kilometers) {
-            const safeDistance =
-                Number(kilometers) || 0;
-
-            return (
-                safeDistance.toLocaleString(
-                    "sk-SK",
-                    {
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1
-                    }
-                )
-                + " km"
-            );
+            const safeDistance = Number(kilometers) || 0;
+            return safeDistance.toLocaleString("sk-SK", {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            }) + " km";
         }
 
         function formatElevation(meters) {
-            const safeElevation =
-                Math.round(
-                    Number(meters) || 0
-                );
-
-            return (
-                safeElevation.toLocaleString("sk-SK")
-                + " m"
-            );
+            const safeElevation = Math.round(Number(meters) || 0);
+            return safeElevation.toLocaleString("sk-SK") + " m";
         }
 
         function formatDuration(seconds) {
-            const safeSeconds =
-                Math.max(
-                    0,
-                    Number(seconds) || 0
-                );
-
-            const totalMinutes =
-                Math.round(
-                    safeSeconds / 60
-                );
-
-            const hours =
-                Math.floor(
-                    totalMinutes / 60
-                );
-
-            const minutes =
-                totalMinutes % 60;
-
-            return (
-                hours.toLocaleString("sk-SK")
-                + " h "
-                + String(minutes).padStart(2, "0")
-                + " min"
-            );
+            const safeSeconds = Math.max(0, Number(seconds) || 0);
+            const totalMinutes = Math.round(safeSeconds / 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return hours.toLocaleString("sk-SK") + " h " + String(minutes).padStart(2, "0") + " min";
         }
 
         /* =====================================================
@@ -652,201 +544,115 @@
         function createPopup(activity) {
             return `
                 <div class="activityPopup">
-
                     <div class="activityTitle">
-                        ${escapeHtml(
-                            activity.name || "Túra"
-                        )}
+                        ${escapeHtml(activity.name || "Túra")}
                     </div>
-
                     <div class="activityDetail">
-                        Dátum:
-                        <strong>
-                            ${escapeHtml(
-                                formatDate(activity.date)
-                            )}
-                        </strong>
+                        Dátum: <strong>${escapeHtml(formatDate(activity.date))}</strong>
                     </div>
-
                     <div class="activityDetail">
-                        Typ:
-                        <strong>
-                            ${escapeHtml(
-                                formatActivityType(
-                                    activity.type
-                                )
-                            )}
-                        </strong>
+                        Typ: <strong>${escapeHtml(formatActivityType(activity.type))}</strong>
                     </div>
-
                     <div class="activityDetail">
-                        Vzdialenosť:
-                        <strong>
-                            ${escapeHtml(
-                                formatDistance(
-                                    activity.distanceKilometers
-                                )
-                            )}
-                        </strong>
+                        Vzdialenosť: <strong>${escapeHtml(formatDistance(activity.distanceKilometers))}</strong>
                     </div>
-
                     <div class="activityDetail">
-                        Stúpanie:
-                        <strong>
-                            ${escapeHtml(
-                                formatElevation(
-                                    activity.elevationGainMeters
-                                )
-                            )}
-                        </strong>
+                        Stúpanie: <strong>${escapeHtml(formatElevation(activity.elevationGainMeters))}</strong>
                     </div>
-
                     <div class="activityDetail">
-                        Klesanie:
-                        <strong>
-                            ${escapeHtml(
-                                formatElevation(
-                                    activity.elevationLossMeters
-                                )
-                            )}
-                        </strong>
+                        Klesanie: <strong>${escapeHtml(formatElevation(activity.elevationLossMeters))}</strong>
                     </div>
-
                     <div class="activityDetail">
-                        Čas:
-                        <strong>
-                            ${escapeHtml(
-                                formatDuration(
-                                    activity.durationSeconds
-                                )
-                            )}
-                        </strong>
+                        Čas: <strong>${escapeHtml(formatDuration(activity.durationSeconds))}</strong>
                     </div>
-
                 </div>
             `;
         }
 
         /* =====================================================
-           Filter rokov
+           Filter rokov a výberu túry
            ===================================================== */
 
         function populateYearFilter(years) {
             const sortedYears = [
                 ...new Set(
                     years
-                        .filter(
-                            function (year) {
-                                return (
-                                    year !== null
-                                    &&
-                                    year !== undefined
-                                    &&
-                                    String(year).trim() !== ""
-                                );
-                            }
-                        )
+                        .filter(function (year) {
+                            return year !== null && year !== undefined && String(year).trim() !== "";
+                        })
                         .map(Number)
                         .filter(Number.isFinite)
                 )
-            ].sort(
-                function (a, b) {
-                    return b - a;
-                }
-            );
+            ].sort(function (a, b) {
+                return b - a;
+            });
 
             for (const year of sortedYears) {
-                const option =
-                    document.createElement("option");
-
-                option.value =
-                    String(year);
-
-                option.textContent =
-                    String(year);
-
+                const option = document.createElement("option");
+                option.value = String(year);
+                option.textContent = String(year);
                 yearFilter.appendChild(option);
             }
 
-            if (
-                sortedYears.includes(CURRENT_YEAR)
-            ) {
-                yearFilter.value =
-                    String(CURRENT_YEAR);
-
-            } else if (
-                sortedYears.length > 0
-            ) {
-                yearFilter.value =
-                    String(sortedYears[0]);
-
+            if (sortedYears.includes(CURRENT_YEAR)) {
+                yearFilter.value = String(CURRENT_YEAR);
+            } else if (sortedYears.length > 0) {
+                yearFilter.value = String(sortedYears[0]);
             } else {
-                yearFilter.value =
-                    "all";
+                yearFilter.value = "all";
             }
         }
 
-        function getSelectedActivities() {
-            const selectedYear =
-                yearFilter.value;
+        function updateHikeDropdown(filteredActivities) {
+            // Vyčistenie predchádzajúcich možností okrem "Všetky túry"
+            hikeFilter.innerHTML = '<option value="all">Všetky túry</option>';
 
+            // Zoradenie aktivít od najnovšej po najstaršiu
+            const sorted = [...filteredActivities].sort(function (a, b) {
+                return new Date(b.date || 0) - new Date(a.date || 0);
+            });
+
+            for (const activity of sorted) {
+                const option = document.createElement("option");
+                // Použijeme jedinečný identifikátor (názov súboru alebo index)
+                option.value = activity.file;
+                const formattedDate = formatDate(activity.date);
+                option.textContent = `${formattedDate} - ${activity.name || "Túra"}`;
+                hikeFilter.appendChild(option);
+            }
+
+            hikeFilter.value = "all";
+        }
+
+        function getFilteredActivities() {
+            const selectedYear = yearFilter.value;
             if (selectedYear === "all") {
                 return activities;
             }
-
-            return activities.filter(
-                function (activity) {
-                    return (
-                        String(activity.year)
-                        === selectedYear
-                    );
-                }
-            );
+            return activities.filter(function (activity) {
+                return String(activity.year) === selectedYear;
+            });
         }
 
         /* =====================================================
            Súhrnné štatistiky
            ===================================================== */
 
-        function updateStatistics(
-            selectedActivities
-        ) {
+        function updateStatistics(selectedActivities) {
             let totalDistance = 0;
             let totalElevation = 0;
             let totalDuration = 0;
 
-            for (
-                const activity
-                of selectedActivities
-            ) {
-                totalDistance +=
-                    Number(
-                        activity.distanceKilometers
-                    ) || 0;
-
-                totalElevation +=
-                    Number(
-                        activity.elevationGainMeters
-                    ) || 0;
-
-                totalDuration +=
-                    Number(
-                        activity.durationSeconds
-                    ) || 0;
+            for (const activity of selectedActivities) {
+                totalDistance += Number(activity.distanceKilometers) || 0;
+                totalElevation += Number(activity.elevationGainMeters) || 0;
+                totalDuration += Number(activity.durationSeconds) || 0;
             }
 
-            activityCountElement.textContent =
-                selectedActivities.length
-                    .toLocaleString("sk-SK");
-
-            totalDistanceElement.textContent =
-                formatDistance(totalDistance);
-
-            totalElevationElement.textContent =
-                formatElevation(totalElevation);
-
-            totalTimeElement.textContent =
-                formatDuration(totalDuration);
+            activityCountElement.textContent = selectedActivities.length.toLocaleString("sk-SK");
+            totalDistanceElement.textContent = formatDistance(totalDistance);
+            totalElevationElement.textContent = formatElevation(totalElevation);
+            totalTimeElement.textContent = formatDuration(totalDuration);
         }
 
         /* =====================================================
@@ -854,107 +660,65 @@
            ===================================================== */
 
         function getValidCoordinates(activity) {
-            if (
-                !Array.isArray(
-                    activity.coordinates
-                )
-            ) {
+            if (!Array.isArray(activity.coordinates)) {
                 return [];
             }
 
             return activity.coordinates
-                .filter(
-                    function (coordinate) {
-                        return (
-                            Array.isArray(coordinate)
-                            &&
-                            coordinate.length >= 2
-                            &&
-                            Number.isFinite(
-                                Number(coordinate[0])
-                            )
-                            &&
-                            Number.isFinite(
-                                Number(coordinate[1])
-                            )
-                        );
-                    }
-                )
-                .map(
-                    function (coordinate) {
-                        return [
-                            Number(coordinate[0]),
-                            Number(coordinate[1])
-                        ];
-                    }
-                );
+                .filter(function (coordinate) {
+                    return (
+                        Array.isArray(coordinate) &&
+                        coordinate.length >= 2 &&
+                        Number.isFinite(Number(coordinate[0])) &&
+                        Number.isFinite(Number(coordinate[1]))
+                    );
+                })
+                .map(function (coordinate) {
+                    return [Number(coordinate[0]), Number(coordinate[1])];
+                });
         }
 
         /* =====================================================
            Zobrazenie trás a pinov
            ===================================================== */
 
-        function renderSelectedActivities() {
-            const selectedActivities =
-                getSelectedActivities();
+        function renderSelectedActivities(updateDropdownOptions = true) {
+            const selectedActivities = getFilteredActivities();
+
+            if (updateDropdownOptions) {
+                updateHikeDropdown(selectedActivities);
+            }
 
             displayedLayers.clearLayers();
+            activityLayerMap.clear();
 
             let renderedRouteCount = 0;
 
-            for (
-                const activity
-                of selectedActivities
-            ) {
-                const coordinates =
-                    getValidCoordinates(activity);
+            for (const activity of selectedActivities) {
+                const coordinates = getValidCoordinates(activity);
 
                 if (coordinates.length < 2) {
-                    console.warn(
-                        "Aktivita nemá platné súradnice:",
-                        activity.file,
-                        activity.name
-                    );
-
+                    console.warn("Aktivita nemá platné súradnice:", activity.file, activity.name);
                     continue;
                 }
 
                 const popupContent = createPopup(activity);
 
-                // Nakreslenie trasy
-                const route = L.polyline(
-                    coordinates,
-                    {
-                        color: ROUTE_COLOR,
-                        weight: 4,
-                        opacity: 0.85,
-                        lineCap: "round",
-                        lineJoin: "round",
-                        smoothFactor: 1
-                    }
-                );
-
-                route.bindPopup(
-                    popupContent,
-                    {
-                        maxWidth: 300
-                    }
-                );
-
-                // Pridanie pinu na štartový bod
-                const startPoint = coordinates[0];
-                const marker = L.marker(startPoint, {
-                    icon: startPinIcon
+                const route = L.polyline(coordinates, {
+                    color: ROUTE_COLOR,
+                    weight: 4,
+                    opacity: 0.85,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    smoothFactor: 1
                 });
 
-                marker.bindPopup(
-                    popupContent,
-                    {
-                        maxWidth: 300
-                    }
-                );
+                route.bindPopup(popupContent, { maxWidth: 300 });
 
-                // Zvýraznenie trasy pri prechode myšou nad trasou alebo pinom
+                const startPoint = coordinates[0];
+                const marker = L.marker(startPoint, { icon: startPinIcon });
+                marker.bindPopup(popupContent, { maxWidth: 300 });
+
                 const highlightRoute = function () {
                     route.setStyle({
                         color: ROUTE_HOVER_COLOR,
@@ -974,64 +738,36 @@
 
                 route.on("mouseover", highlightRoute);
                 route.on("mouseout", unhighlightRoute);
-
                 marker.on("mouseover", highlightRoute);
                 marker.on("mouseout", unhighlightRoute);
 
                 route.addTo(displayedLayers);
                 marker.addTo(displayedLayers);
 
+                // Uloženie vrstvy pre výber z dropdown menu
+                activityLayerMap.set(activity.file, {
+                    route: route,
+                    marker: marker,
+                    bounds: route.getBounds()
+                });
+
                 renderedRouteCount++;
             }
 
-            updateStatistics(
-                selectedActivities
-            );
-
+            updateStatistics(selectedActivities);
             map.invalidateSize();
 
             if (renderedRouteCount > 0) {
-                const bounds =
-                    displayedLayers.getBounds();
-
+                const bounds = displayedLayers.getBounds();
                 if (bounds.isValid()) {
-                    map.fitBounds(
-                        bounds,
-                        {
-                            padding: [30, 30],
-                            maxZoom: MAX_FIT_ZOOM
-                        }
-                    );
+                    map.fitBounds(bounds, {
+                        padding: [30, 30],
+                        maxZoom: MAX_FIT_ZOOM
+                    });
                 }
-
             } else {
-                map.setView(
-                    DEFAULT_CENTER,
-                    DEFAULT_ZOOM
-                );
+                map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
             }
-
-            window.setTimeout(
-                function () {
-                    map.invalidateSize();
-
-                    if (renderedRouteCount > 0) {
-                        const bounds =
-                            displayedLayers.getBounds();
-
-                        if (bounds.isValid()) {
-                            map.fitBounds(
-                                bounds,
-                                {
-                                    padding: [30, 30],
-                                    maxZoom: MAX_FIT_ZOOM
-                                }
-                            );
-                        }
-                    }
-                },
-                150
-            );
         }
 
         /* =====================================================
@@ -1039,14 +775,9 @@
            ===================================================== */
 
         function showError(message) {
-            loadingMessage.style.display =
-                "none";
-
-            errorMessage.textContent =
-                message;
-
-            errorMessage.style.display =
-                "block";
+            loadingMessage.style.display = "none";
+            errorMessage.textContent = message;
+            errorMessage.style.display = "block";
         }
 
         /* =====================================================
@@ -1055,73 +786,41 @@
 
         async function initializeMap() {
             try {
-                const response =
-                    await fetch(
-                        "hikes.json?v=" + Date.now(),
-                        {
-                            cache: "no-store"
-                        }
-                    );
+                const response = await fetch("hikes.json?v=" + Date.now(), {
+                    cache: "no-store"
+                });
 
                 if (!response.ok) {
-                    throw new Error(
-                        "Nepodarilo sa načítať hikes.json. "
-                        + "HTTP stav: "
-                        + response.status
-                    );
+                    throw new Error("Nepodarilo sa načítať hikes.json. HTTP stav: " + response.status);
                 }
 
-                const data =
-                    await response.json();
+                const data = await response.json();
 
-                if (
-                    !data
-                    ||
-                    !Array.isArray(
-                        data.activities
-                    )
-                ) {
-                    throw new Error(
-                        "Súbor hikes.json neobsahuje platné pole activities."
-                    );
+                if (!data || !Array.isArray(data.activities)) {
+                    throw new Error("Súbor hikes.json neobsahuje platné pole activities.");
                 }
 
-                activities =
-                    data.activities;
+                activities = data.activities;
 
-                const years =
-                    Array.isArray(data.years)
-                        ? data.years
-                        : activities.map(
-                            function (activity) {
-                                return activity.year;
-                            }
-                        );
+                const years = Array.isArray(data.years)
+                    ? data.years
+                    : activities.map(function (activity) {
+                        return activity.year;
+                    });
 
                 populateYearFilter(years);
-
                 renderSelectedActivities();
 
-                loadingMessage.style.display =
-                    "none";
+                loadingMessage.style.display = "none";
 
-                window.setTimeout(
-                    function () {
-                        map.invalidateSize();
-                    },
-                    250
-                );
+                window.setTimeout(function () {
+                    map.invalidateSize();
+                }, 250);
 
             } catch (error) {
                 console.error(error);
-
-                showError(
-                    "Nepodarilo sa načítať údaje o túrach. "
-                    + error.message
-                );
-
-                activityCountElement.textContent =
-                    "Chyba";
+                showError("Nepodarilo sa načítať údaje o túrach. " + error.message);
+                activityCountElement.textContent = "Chyba";
             }
         }
 
@@ -1129,17 +828,32 @@
            Udalosti
            ===================================================== */
 
-        yearFilter.addEventListener(
-            "change",
-            renderSelectedActivities
-        );
+        yearFilter.addEventListener("change", function () {
+            // Pri zmene roka sa prepošlú aktivity a prekreslí sa aj výber túr v danom roku
+            renderSelectedActivities(true);
+        });
 
-        window.addEventListener(
-            "resize",
-            function () {
-                map.invalidateSize();
+        hikeFilter.addEventListener("change", function () {
+            const selectedFile = hikeFilter.value;
+            if (selectedFile === "all") {
+                // Ak zvolil "Všetky túry", prispôsob mapu celému výberu
+                const bounds = displayedLayers.getBounds();
+                if (bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [30, 30], maxZoom: MAX_FIT_ZOOM });
+                }
+            } else {
+                // Ak zvolil konkrétnu túru, priblíž na ňu a otvor popup
+                const item = activityLayerMap.get(selectedFile);
+                if (item && item.bounds.isValid()) {
+                    map.fitBounds(item.bounds, { padding: [50, 50], maxZoom: 15 });
+                    item.marker.openPopup();
+                }
             }
-        );
+        });
+
+        window.addEventListener("resize", function () {
+            map.invalidateSize();
+        });
 
         /* =====================================================
            Spustenie
