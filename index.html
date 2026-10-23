@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="sk">
+
 <head>
     <meta charset="UTF-8">
 
@@ -8,22 +9,16 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Moje túry</title>
+    <title>KST Sokolka Selec</title>
 
-    <!-- Leaflet CSS -->
+    <!-- Leaflet CSS: intentionally without integrity attribute -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIINfQ3Wz0fXlJo8n5g7ZB3Jk8LykyYtQ="
-        crossorigin=""
     >
 
-    <!-- Leaflet JavaScript -->
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-        crossorigin=""
-    ></script>
+    <!-- Leaflet JavaScript: intentionally without integrity attribute -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
@@ -34,7 +29,9 @@
             --border-color: #dde2e7;
             --primary-text: #1f2933;
             --secondary-text: #637381;
-            --accent-color: #d62828;
+            --error-background: #fff1f2;
+            --error-border: #dc2626;
+            --error-text: #991b1b;
         }
 
         * {
@@ -61,7 +58,7 @@
         }
 
         /* =====================================================
-           Header
+           Hlavička
            ===================================================== */
 
         #header {
@@ -102,7 +99,7 @@
         #yearFilter {
             min-width: 135px;
             height: 36px;
-            padding: 6px 34px 6px 10px;
+            padding: 6px 10px;
             border: 1px solid #b8c1ca;
             border-radius: 6px;
             background: #ffffff;
@@ -113,11 +110,11 @@
 
         #yearFilter:focus {
             outline: 2px solid rgba(214, 40, 40, 0.2);
-            border-color: var(--accent-color);
+            border-color: var(--route-color);
         }
 
         /* =====================================================
-           Statistics
+           Štatistiky
            ===================================================== */
 
         #statistics {
@@ -152,7 +149,7 @@
         }
 
         /* =====================================================
-           Map
+           Mapa
            ===================================================== */
 
         #mapContainer {
@@ -170,6 +167,10 @@
             min-height: 300px;
             background: #dce4e8;
         }
+
+        /* =====================================================
+           Načítavanie a chyby
+           ===================================================== */
 
         #loadingMessage {
             position: absolute;
@@ -192,13 +193,13 @@
             top: 18px;
             left: 50%;
             z-index: 2001;
-            width: min(90%, 650px);
+            width: min(90%, 700px);
             transform: translateX(-50%);
             padding: 12px 16px;
-            border: 1px solid #dc2626;
+            border: 1px solid var(--error-border);
             border-radius: 7px;
-            background: #fff1f2;
-            color: #991b1b;
+            background: var(--error-background);
+            color: var(--error-text);
             font-size: 14px;
             line-height: 1.5;
         }
@@ -231,7 +232,7 @@
         }
 
         /* =====================================================
-           Mobile layout
+           Mobilné zobrazenie
            ===================================================== */
 
         @media (max-width: 750px) {
@@ -271,25 +272,23 @@
                 font-size: 16px;
             }
         }
-
-        @media (max-width: 380px) {
-            #statistics {
-                grid-template-columns: 1fr;
-            }
-        }
     </style>
 </head>
 
 <body>
+
     <div id="dashboard">
 
         <header id="header">
+
             <div id="headerTop">
+
                 <h1 id="pageTitle">
                     Moje túry
                 </h1>
 
                 <div id="filterContainer">
+
                     <label for="yearFilter">
                         Rok:
                     </label>
@@ -299,11 +298,15 @@
                             Všetky roky
                         </option>
                     </select>
+
                 </div>
+
             </div>
 
             <div id="statistics">
+
                 <div class="statisticCard">
+
                     <div class="statisticLabel">
                         Počet túr
                     </div>
@@ -314,9 +317,11 @@
                     >
                         0
                     </div>
+
                 </div>
 
                 <div class="statisticCard">
+
                     <div class="statisticLabel">
                         Celková vzdialenosť
                     </div>
@@ -327,9 +332,11 @@
                     >
                         0,0 km
                     </div>
+
                 </div>
 
                 <div class="statisticCard">
+
                     <div class="statisticLabel">
                         Celkové stúpanie
                     </div>
@@ -340,9 +347,11 @@
                     >
                         0 m
                     </div>
+
                 </div>
 
                 <div class="statisticCard">
+
                     <div class="statisticLabel">
                         Celkový čas
                     </div>
@@ -353,11 +362,15 @@
                     >
                         0 h 00 min
                     </div>
+
                 </div>
+
             </div>
+
         </header>
 
         <main id="mapContainer">
+
             <div id="loadingMessage">
                 Načítavam túry...
             </div>
@@ -365,6 +378,7 @@
             <div id="errorMessage"></div>
 
             <div id="map"></div>
+
         </main>
 
     </div>
@@ -373,7 +387,7 @@
         "use strict";
 
         /* =====================================================
-           Configuration
+           Konfigurácia
            ===================================================== */
 
         const DEFAULT_CENTER = [
@@ -382,7 +396,6 @@
         ];
 
         const DEFAULT_ZOOM = 9;
-
         const MAX_FIT_ZOOM = 14;
 
         const ROUTE_COLOR = "#d62828";
@@ -392,7 +405,7 @@
             new Date().getFullYear();
 
         /* =====================================================
-           DOM elements
+           HTML elementy
            ===================================================== */
 
         const yearFilter =
@@ -417,17 +430,25 @@
             document.getElementById("errorMessage");
 
         /* =====================================================
-           Verify Leaflet
+           Overenie Leaflet knižnice
            ===================================================== */
 
         if (typeof L === "undefined") {
+            loadingMessage.style.display = "none";
+
+            errorMessage.textContent =
+                "Knižnica Leaflet sa nenačítala. "
+                + "Skontrolujte pripojenie alebo blokovanie CDN.";
+
+            errorMessage.style.display = "block";
+
             throw new Error(
-                "Knižnica Leaflet sa nenačítala."
+                "Leaflet library is not loaded."
             );
         }
 
         /* =====================================================
-           Map initialization
+           Inicializácia mapy
            ===================================================== */
 
         const map = L.map(
@@ -446,8 +467,12 @@
             {
                 minZoom: 2,
                 maxZoom: 19,
+
                 attribution:
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    '&copy; '
+                    + '<a href="https://www.openstreetmap.org/copyright">'
+                    + 'OpenStreetMap'
+                    + '</a>'
             }
         );
 
@@ -459,22 +484,21 @@
         displayedLayers.addTo(map);
 
         /* =====================================================
-           Application data
+           Dáta aplikácie
            ===================================================== */
 
         let activities = [];
 
         /* =====================================================
-           Formatting helpers
+           Formátovanie
            ===================================================== */
 
         function escapeHtml(value) {
+
             if (
                 value === null
                 ||
-                value === undefined
-            ) {
-                return "";
+        ;
             }
 
             return String(value)
@@ -486,6 +510,7 @@
         }
 
         function formatDate(dateValue) {
+
             if (!dateValue) {
                 return "Neznámy";
             }
@@ -498,7 +523,19 @@
             }
 
             return (
-                dateParts  .trim()
+                dateParts[2]
+                + ". "
+                + dateParts[1]
+                + ". "
+                + dateParts[0]
+            );
+        }
+
+        function formatActivityType(type) {
+
+            const normalizedType =
+                String(type || "")
+                    .trim()
                     .toLowerCase();
 
             const translations = {
@@ -522,6 +559,7 @@
         }
 
         function formatDistance(kilometers) {
+
             const safeDistance =
                 Number(kilometers) || 0;
 
@@ -538,6 +576,7 @@
         }
 
         function formatElevation(meters) {
+
             const safeElevation =
                 Math.round(
                     Number(meters) || 0
@@ -550,6 +589,7 @@
         }
 
         function formatDuration(seconds) {
+
             const safeSeconds =
                 Math.max(
                     0,
@@ -578,10 +618,11 @@
         }
 
         /* =====================================================
-           Popup
+           Popup aktivity
            ===================================================== */
 
         function createPopup(activity) {
+
             return `
                 <div class="activityPopup">
 
@@ -660,10 +701,11 @@
         }
 
         /* =====================================================
-           Year filter
+           Filter rokov
            ===================================================== */
 
         function populateYearFilter(years) {
+
             const sortedYears = [
                 ...new Set(
                     years
@@ -683,6 +725,7 @@
             );
 
             for (const year of sortedYears) {
+
                 const option =
                     document.createElement("option");
 
@@ -714,6 +757,7 @@
         }
 
         function getSelectedActivities() {
+
             const selectedYear =
                 yearFilter.value;
 
@@ -729,12 +773,13 @@
         }
 
         /* =====================================================
-           Statistics
+           Súhrnné štatistiky
            ===================================================== */
 
         function updateStatistics(
             selectedActivities
         ) {
+
             let totalDistance = 0;
             let totalElevation = 0;
             let totalDuration = 0;
@@ -774,10 +819,11 @@
         }
 
         /* =====================================================
-           Coordinate validation
+           Kontrola súradníc
            ===================================================== */
 
         function getValidCoordinates(activity) {
+
             if (
                 !Array.isArray(
                     activity.coordinates
@@ -810,10 +856,11 @@
         }
 
         /* =====================================================
-           Map rendering
+           Vykreslenie trás
            ===================================================== */
 
         function renderSelectedActivities() {
+
             const selectedActivities =
                 getSelectedActivities();
 
@@ -825,10 +872,12 @@
                 const activity
                 of selectedActivities
             ) {
+
                 const coordinates =
                     getValidCoordinates(activity);
 
                 if (coordinates.length < 2) {
+
                     console.warn(
                         "Aktivita nemá platné súradnice:",
                         activity.file,
@@ -860,6 +909,7 @@
                 route.on(
                     "mouseover",
                     function () {
+
                         route.setStyle({
                             color: ROUTE_HOVER_COLOR,
                             weight: 6,
@@ -873,6 +923,7 @@
                 route.on(
                     "mouseout",
                     function () {
+
                         route.setStyle({
                             color: ROUTE_COLOR,
                             weight: 4,
@@ -892,11 +943,15 @@
                 selectedActivities
             );
 
+            map.invalidateSize();
+
             if (renderedRouteCount > 0) {
+
                 const bounds =
                     displayedLayers.getBounds();
 
                 if (bounds.isValid()) {
+
                     map.fitBounds(
                         bounds,
                         {
@@ -907,46 +962,45 @@
                 }
 
             } else {
+
                 map.setView(
                     DEFAULT_CENTER,
                     DEFAULT_ZOOM
                 );
             }
 
-            /*
-             * Recalculate the map size after header/statistics
-             * layout has been rendered.
-             */
-
             window.setTimeout(
                 function () {
+
                     map.invalidateSize();
 
-                    if (
-                        renderedRouteCount > 0
-                        &&
-                        displayedLayers
-                            .getBounds()
-                            .isValid()
-                    ) {
-                        map.fitBounds(
-                            displayedLayers.getBounds(),
-                            {
-                                padding: [35, 35],
-                                maxZoom: MAX_FIT_ZOOM
-                            }
-                        );
+                    if (renderedRouteCount > 0) {
+
+                        const bounds =
+                            displayedLayers.getBounds();
+
+                        if (bounds.isValid()) {
+
+                            map.fitBounds(
+                                bounds,
+                                {
+                                    padding: [35, 35],
+                                    maxZoom: MAX_FIT_ZOOM
+                                }
+                            );
+                        }
                     }
                 },
-                100
+                150
             );
         }
 
         /* =====================================================
-           Error display
+           Chybová správa
            ===================================================== */
 
         function showError(message) {
+
             loadingMessage.style.display =
                 "none";
 
@@ -958,11 +1012,13 @@
         }
 
         /* =====================================================
-           Initialization
+           Inicializácia údajov
            ===================================================== */
 
         async function initializeMap() {
+
             try {
+
                 const response =
                     await fetch(
                         "hikes.json?v="
@@ -973,6 +1029,7 @@
                     );
 
                 if (!response.ok) {
+
                     throw new Error(
                         "Nepodarilo sa načítať hikes.json. "
                         + "HTTP stav: "
@@ -1017,10 +1074,11 @@
                     function () {
                         map.invalidateSize();
                     },
-                    200
+                    250
                 );
 
             } catch (error) {
+
                 console.error(error);
 
                 showError(
@@ -1034,7 +1092,7 @@
         }
 
         /* =====================================================
-           Events
+           Udalosti
            ===================================================== */
 
         yearFilter.addEventListener(
@@ -1050,10 +1108,12 @@
         );
 
         /* =====================================================
-           Start
+           Spustenie
            ===================================================== */
 
         initializeMap();
     </script>
+
 </body>
+
 </html>
