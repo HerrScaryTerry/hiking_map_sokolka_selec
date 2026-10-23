@@ -169,7 +169,7 @@
         }
 
         /* =====================================================
-           Mapa
+           Mapa & Mobilný fallback
            ===================================================== */
 
         #mapContainer {
@@ -185,6 +185,53 @@
             width: 100%;
             height: 100%;
             background: #dce4e8;
+        }
+
+        /* Mobilná obrazovka (skrytá na deskopoch) */
+        #mobileFallback {
+            display: none;
+            position: absolute;
+            inset: 0;
+            background: var(--card-background);
+            padding: 24px 16px;
+            text-align: center;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            z-index: 3000;
+            overflow-y: auto;
+        }
+
+        #mobileFallback h2 {
+            margin: 0;
+            font-size: 18px;
+            color: var(--primary-text);
+        }
+
+        #mobileFallback p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--secondary-text);
+            line-height: 1.5;
+            max-width: 320px;
+        }
+
+        .fullMapButton {
+            display: inline-block;
+            background: var(--route-color);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 15px;
+            box-shadow: 0 4px 12px rgba(214, 40, 40, 0.3);
+            transition: background 0.2s ease;
+        }
+
+        .fullMapButton:hover {
+            background: var(--route-hover-color);
         }
 
         /* =====================================================
@@ -269,7 +316,7 @@
         }
 
         /* =====================================================
-           Mobilné zobrazenie
+           Responzívne prispôsobenie hlavičky
            ===================================================== */
 
         @media (max-width: 750px) {
@@ -389,12 +436,36 @@
 
             <div id="map"></div>
 
+            <!-- Mobilná obrazovka (zobrazí sa iba na mobilných zariadeniach) -->
+            <div id="mobileFallback">
+                <h2>Interaktívna mapa</h2>
+                <p>Pre najlepší zážitok a pohodlné prezeranie máp a trás na mobile otvorte mapu na celej obrazovke.</p>
+                <a id="fullMapLink" href="#" target="_blank" class="fullMapButton">Otvoriť mapu na celej obrazovke</a>
+            </div>
+
         </main>
 
     </div>
 
     <script>
         "use strict";
+
+        /* =====================================================
+           Detekcia mobilného zariadenia
+           ===================================================== */
+
+        function isMobileDevice() {
+            // Kontrola cez dotykovú vrstvu / šírku okna (skryje mapu na displejoch užších ako 768px)
+            return (window.innerWidth <= 768) || ('ontouchstart' in window);
+        }
+
+        // Automatické nastavenie odkazu na GitHub Pages (aktuálna adresa okna)
+        const currentUrl = window.location.href;
+        document.getElementById("fullMapLink").href = currentUrl;
+
+        if (isMobileDevice()) {
+            document.getElementById("mobileFallback").style.display = "flex";
+        }
 
         /* =====================================================
            Konfigurácia
@@ -425,57 +496,57 @@
         const errorMessage = document.getElementById("errorMessage");
 
         /* =====================================================
-           Kontrola Leaflet
+           Kontrola Leaflet (spustí sa len ak to nie je mobil)
            ===================================================== */
 
-        if (typeof L === "undefined") {
-            loadingMessage.style.display = "none";
-            errorMessage.textContent = "Knižnica Leaflet sa nenačítala. Skontrolujte pripojenie alebo blokovanie CDN.";
-            errorMessage.style.display = "block";
-            throw new Error("Leaflet library is not loaded.");
+        let map = null;
+        let displayedLayers = null;
+
+        if (!isMobileDevice()) {
+            if (typeof L === "undefined") {
+                loadingMessage.style.display = "none";
+                errorMessage.textContent = "Knižnica Leaflet sa nenačítala. Skontrolujte pripojenie alebo blokovanie CDN.";
+                errorMessage.style.display = "block";
+                throw new Error("Leaflet library is not loaded.");
+            }
+
+            map = L.map("map", {
+                zoomControl: true,
+                preferCanvas: true
+            }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+
+            const baseMap = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                minZoom: 2,
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            });
+
+            baseMap.addTo(map);
+
+            displayedLayers = L.featureGroup();
+            displayedLayers.addTo(map);
         }
-
-        /* =====================================================
-           Inicializácia mapy
-           ===================================================== */
-
-        const map = L.map("map", {
-            zoomControl: true,
-            preferCanvas: true
-        }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-
-        const baseMap = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            minZoom: 2,
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        });
-
-        baseMap.addTo(map);
-
-        const displayedLayers = L.featureGroup();
-        displayedLayers.addTo(map);
 
         /* =====================================================
            Ikona pre štartový bod
            ===================================================== */
 
-        const startPinIcon = L.divIcon({
+        const startPinIcon = (!isMobileDevice() && typeof L !== "undefined") ? L.divIcon({
             className: "startPin",
             iconSize: [14, 14],
             iconAnchor: [7, 7],
             popupAnchor: [0, -7]
-        });
+        }) : null;
 
         /* =====================================================
            Dáta aplikácie
            ===================================================== */
 
         let activities = [];
-        // Mapovanie pre prepojenie výberu v selecte s konkrétnou vrstvou trasy/markeru
         let activityLayerMap = new Map();
 
         /* =====================================================
-           Formátowanie
+           Formátovanie
            ===================================================== */
 
         function escapeHtml(value) {
@@ -604,17 +675,14 @@
         }
 
         function updateHikeDropdown(filteredActivities) {
-            // Vyčistenie predchádzajúcich možností okrem "Všetky túry"
             hikeFilter.innerHTML = '<option value="all">Všetky túry</option>';
 
-            // Zoradenie aktivít od najnovšej po najstaršiu
             const sorted = [...filteredActivities].sort(function (a, b) {
                 return new Date(b.date || 0) - new Date(a.date || 0);
             });
 
             for (const activity of sorted) {
                 const option = document.createElement("option");
-                // Použijeme jedinečný identifikátor (názov súboru alebo index)
                 option.value = activity.file;
                 const formattedDate = formatDate(activity.date);
                 option.textContent = `${formattedDate} - ${activity.name || "Túra"}`;
@@ -679,7 +747,7 @@
         }
 
         /* =====================================================
-           Zobrazenie trás a pinov
+           Zobrazenie trás (iba na desktope)
            ===================================================== */
 
         function renderSelectedActivities(updateDropdownOptions = true) {
@@ -687,6 +755,14 @@
 
             if (updateDropdownOptions) {
                 updateHikeDropdown(selectedActivities);
+            }
+
+            updateStatistics(selectedActivities);
+
+            // Ak je to mobil, mapu vôbec nenačítavame ani nevykresľujeme
+            if (isMobileDevice()) {
+                loadingMessage.style.display = "none";
+                return;
             }
 
             displayedLayers.clearLayers();
@@ -698,7 +774,6 @@
                 const coordinates = getValidCoordinates(activity);
 
                 if (coordinates.length < 2) {
-                    console.warn("Aktivita nemá platné súradnice:", activity.file, activity.name);
                     continue;
                 }
 
@@ -744,7 +819,6 @@
                 route.addTo(displayedLayers);
                 marker.addTo(displayedLayers);
 
-                // Uloženie vrstvy pre výber z dropdown menu
                 activityLayerMap.set(activity.file, {
                     route: route,
                     marker: marker,
@@ -754,7 +828,6 @@
                 renderedRouteCount++;
             }
 
-            updateStatistics(selectedActivities);
             map.invalidateSize();
 
             if (renderedRouteCount > 0) {
@@ -813,9 +886,11 @@
 
                 loadingMessage.style.display = "none";
 
-                window.setTimeout(function () {
-                    map.invalidateSize();
-                }, 250);
+                if (!isMobileDevice()) {
+                    window.setTimeout(function () {
+                        map.invalidateSize();
+                    }, 250);
+                }
 
             } catch (error) {
                 console.error(error);
@@ -829,20 +904,19 @@
            ===================================================== */
 
         yearFilter.addEventListener("change", function () {
-            // Pri zmene roka sa prepošlú aktivity a prekreslí sa aj výber túr v danom roku
             renderSelectedActivities(true);
         });
 
         hikeFilter.addEventListener("change", function () {
+            if (isMobileDevice()) return;
+
             const selectedFile = hikeFilter.value;
             if (selectedFile === "all") {
-                // Ak zvolil "Všetky túry", prispôsob mapu celému výberu
                 const bounds = displayedLayers.getBounds();
                 if (bounds.isValid()) {
                     map.fitBounds(bounds, { padding: [30, 30], maxZoom: MAX_FIT_ZOOM });
                 }
             } else {
-                // Ak zvolil konkrétnu túru, priblíž na ňu a otvor popup
                 const item = activityLayerMap.get(selectedFile);
                 if (item && item.bounds.isValid()) {
                     map.fitBounds(item.bounds, { padding: [50, 50], maxZoom: 15 });
@@ -852,7 +926,9 @@
         });
 
         window.addEventListener("resize", function () {
-            map.invalidateSize();
+            if (!isMobileDevice() && map) {
+                map.invalidateSize();
+            }
         });
 
         /* =====================================================
