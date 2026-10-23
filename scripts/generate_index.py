@@ -470,12 +470,13 @@ def main() -> None:
             "coordinates": output_coordinates
         }
 
-    activities.append(activity)
+        # <--- FIXED: This append is now inside the loop so every hike gets added properly
+        activities.append(activity)
 
-    if len(sorted_group) > 1:
-        print(f"Merged {len(sorted_group)} file(s) for date {first_item['date']} under name -> '{activity['name']}' | Total: {activity['distanceKilometers']} km")
-    else:
-        print(f"Processed: {first_item['file']} -> {activity['name']} | {activity['date']} | {activity['distanceKilometers']} km")
+        if len(sorted_group) > 1:
+            print(f"Merged {len(sorted_group)} file(s) for date {first_item['date']} under name -> '{activity['name']}' | Total: {activity['distanceKilometers']} km")
+        else:
+            print(f"Processed: {first_item['file']} -> {activity['name']} | {activity['date']} | {activity['distanceKilometers']} km")
 
     activities.sort(
         key=lambda activity: (
@@ -512,3 +513,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+            
