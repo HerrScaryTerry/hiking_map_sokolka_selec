@@ -22,21 +22,24 @@
 
     <style>
         :root {
-            /* Palette extracted from your website */
+            /* Palette matched to website */
             --site-dark-green: #2b4343;
-            --site-header-bg: #354f4f;
+            --site-header-bg: rgba(53, 79, 79, 0.92);
             --site-peach: #f4a27e;
             --site-peach-hover: #e88d67;
             
-            --hiking-color: #d62828;
-            --hiking-hover-color: #9d0208;
-            --cycling-color: #1d4ed8;
-            --cycling-hover-color: #1e40af;
+            /* Vibrant Pro Route Colors */
+            --hiking-core: #ff3b30;
+            --hiking-glow: rgba(255, 59, 48, 0.35);
+            --hiking-hover: #d70015;
+
+            --cycling-core: #007aff;
+            --cycling-glow: rgba(0, 122, 255, 0.35);
+            --cycling-hover: #0051a8;
             
             --background-color: #2b4343;
             --card-background: #ffffff;
-            --card-subtle-bg: #f8fafb;
-            --border-color: #d1d8dd;
+            --border-color: rgba(255, 255, 255, 0.18);
             --primary-text: #1f2933;
             --secondary-text: #637381;
             --header-text: #ffffff;
@@ -56,7 +59,7 @@
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: var(--primary-text);
             background: var(--background-color);
         }
@@ -66,6 +69,7 @@
             flex-direction: column;
             width: 100%;
             height: 100vh;
+            background: var(--background-color);
         }
 
         /* =====================================================
@@ -79,7 +83,7 @@
             padding: 8px 12px;
             font-size: 12px;
             text-align: center;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             flex: 0 0 auto;
             z-index: 1001;
             font-weight: 600;
@@ -93,15 +97,17 @@
         }
 
         /* =====================================================
-           Hlavička (Matched to Website Theme)
+           Modern Glassmorphic Header
            ===================================================== */
 
         #header {
             flex: 0 0 auto;
-            padding: 12px 16px;
+            padding: 14px 18px;
             background: var(--site-header-bg);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.15);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
             z-index: 1000;
             color: var(--header-text);
         }
@@ -109,19 +115,10 @@
         #headerTop {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 10px;
+            justify-content: flex-start;
+            gap: 16px;
+            margin-bottom: 12px;
             flex-wrap: wrap;
-        }
-
-        #pageTitle {
-            margin: 0;
-            font-size: 20px;
-            line-height: 1.2;
-            font-weight: 700;
-            white-space: nowrap;
-            color: var(--header-text);
         }
 
         #filtersWrapper {
@@ -129,72 +126,117 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            width: 100%;
         }
 
         .filterGroup {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         .filterGroup label {
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--header-text);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .filterIcon {
+            width: 14px;
+            height: 14px;
+            fill: var(--site-peach);
         }
 
         select.appSelect {
-            height: 36px;
-            padding: 6px 10px;
-            border: 1px solid #7c9494;
-            border-radius: 6px;
-            background: #ffffff;
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.95);
             color: var(--primary-text);
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        select.appSelect:hover {
+            background: #ffffff;
+            border-color: var(--site-peach);
         }
 
         select.appSelect:focus {
-            outline: 2px solid var(--site-peach);
+            box-shadow: 0 0 0 3px rgba(244, 162, 126, 0.35);
             border-color: var(--site-peach);
         }
 
         #yearFilter {
-            min-width: 100px;
+            min-width: 95px;
         }
 
         #typeFilter {
-            min-width: 130px;
+            min-width: 135px;
         }
 
         #hikeFilter {
             min-width: 160px;
-            max-width: 240px;
+            max-width: 280px;
         }
 
         /* =====================================================
-           Štatistiky
+           Modern Statistic Cards
            ===================================================== */
 
         #statistics {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 8px;
+            gap: 10px;
         }
 
         .statisticCard {
             min-width: 0;
-            padding: 8px 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
             background: var(--card-background);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .statisticCard::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--site-peach);
+        }
+
+        .statisticCard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
         }
 
         .statisticLabel {
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             color: var(--secondary-text);
-            font-size: 11px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             line-height: 1.2;
             white-space: nowrap;
             overflow: hidden;
@@ -204,9 +246,9 @@
         .statisticValue {
             overflow: hidden;
             color: var(--primary-text);
-            font-size: 16px;
-            line-height: 1.25;
-            font-weight: 700;
+            font-size: 17px;
+            line-height: 1.2;
+            font-weight: 800;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
@@ -234,7 +276,7 @@
             display: none;
             position: absolute;
             inset: 0;
-            background: rgba(43, 67, 67, 0.55);
+            background: rgba(43, 67, 67, 0.6);
             color: #ffffff;
             z-index: 2500;
             justify-content: center;
@@ -243,7 +285,7 @@
             padding: 20px;
             font-weight: 700;
             font-size: 15px;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(3px);
             cursor: pointer;
             transition: background 0.3s ease;
         }
@@ -262,12 +304,13 @@
             left: 50%;
             z-index: 2000;
             transform: translateX(-50%);
-            padding: 8px 14px;
+            padding: 8px 16px;
             border: 1px solid var(--border-color);
-            border-radius: 7px;
-            background: rgba(255, 255, 255, 0.96);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             font-size: 13px;
+            font-weight: 600;
             white-space: nowrap;
         }
 
@@ -281,7 +324,7 @@
             transform: translateX(-50%);
             padding: 10px 14px;
             border: 1px solid var(--error-border);
-            border-radius: 7px;
+            border-radius: 8px;
             background: var(--error-background);
             color: var(--error-text);
             font-size: 13px;
@@ -293,56 +336,60 @@
            ===================================================== */
 
         .activityPopup {
-            min-width: 200px;
+            min-width: 210px;
             color: var(--primary-text);
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             line-height: 1.5;
         }
 
         .activityTitle {
-            margin-bottom: 6px;
-            padding-bottom: 4px;
-            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--site-peach);
             font-size: 15px;
-            font-weight: 700;
+            font-weight: 800;
+            color: var(--site-dark-green);
         }
 
         .activityDetail {
             font-size: 12px;
+            color: #4a5568;
+            margin-bottom: 2px;
         }
 
         .activityDetail strong {
             font-weight: 700;
+            color: var(--primary-text);
         }
 
         /* =====================================================
-           Custom Pin Styles
+           Pro Pin Styles
            ===================================================== */
 
         .startPinHiking {
-            background: var(--hiking-color);
+            background: var(--hiking-core);
             border: 2px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 3px rgba(255, 59, 48, 0.35), 0 3px 8px rgba(0, 0, 0, 0.4);
             cursor: pointer;
-            transition: transform 0.15s ease, background-color 0.15s ease;
+            transition: transform 0.2s ease;
         }
         .startPinHiking:hover {
-            background: var(--hiking-hover-color);
-            transform: scale(1.25);
+            transform: scale(1.3);
+            background: var(--hiking-hover);
         }
 
         .startPinCycling {
-            background: var(--cycling-color);
+            background: var(--cycling-core);
             border: 2px solid #ffffff;
             border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.35), 0 3px 8px rgba(0, 0, 0, 0.4);
             cursor: pointer;
-            transition: transform 0.15s ease, background-color 0.15s ease;
+            transition: transform 0.2s ease;
         }
         .startPinCycling:hover {
-            background: var(--cycling-hover-color);
-            transform: scale(1.25);
+            transform: scale(1.3);
+            background: var(--cycling-hover);
         }
 
         /* =====================================================
@@ -359,40 +406,42 @@
             }
 
             #header {
-                padding: 8px 10px;
+                padding: 10px 12px;
             }
 
             #headerTop {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 8px;
-                margin-bottom: 8px;
+                margin-bottom: 10px;
             }
 
             #filtersWrapper {
                 justify-content: space-between;
+                gap: 8px;
             }
 
             .filterGroup {
-                flex: 1;
+                flex: 1 1 calc(50% - 6px);
+                min-width: 0;
+            }
+
+            .filterGroup:nth-child(3) {
+                flex: 1 1 100%;
+            }
+
+            select.appSelect {
+                width: 100%;
             }
 
             #hikeFilter {
                 max-width: none;
-                width: 100%;
-            }
-
-            #pageTitle {
-                font-size: 17px;
             }
 
             #statistics {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 6px;
+                gap: 8px;
             }
 
             .statisticCard {
-                padding: 6px 8px;
+                padding: 8px 10px;
             }
 
             .statisticValue {
@@ -400,7 +449,7 @@
             }
         }
 
-        @media (max-width: 360px) {
+        @media (max-width: 380px) {
             #statistics {
                 grid-template-columns: 1fr;
             }
@@ -421,20 +470,23 @@
 
             <div id="headerTop">
 
-                <h1 id="pageTitle">
-                    KST Sokolka Selec
-                </h1>
-
                 <div id="filtersWrapper">
+                    
                     <div class="filterGroup">
-                        <label for="yearFilter">Rok:</label>
+                        <label for="yearFilter">
+                            <svg class="filterIcon" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+                            Rok:
+                        </label>
                         <select id="yearFilter" class="appSelect">
                             <option value="all">Všetky roky</option>
                         </select>
                     </div>
 
                     <div class="filterGroup">
-                        <label for="typeFilter">Typ:</label>
+                        <label for="typeFilter">
+                            <svg class="filterIcon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                            Typ:
+                        </label>
                         <select id="typeFilter" class="appSelect">
                             <option value="all">Všetky aktivity</option>
                             <option value="hiking">Turistika</option>
@@ -443,11 +495,15 @@
                     </div>
 
                     <div class="filterGroup">
-                        <label for="hikeFilter">Túra:</label>
+                        <label for="hikeFilter">
+                            <svg class="filterIcon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                            Trasa:
+                        </label>
                         <select id="hikeFilter" class="appSelect">
                             <option value="all">Všetky túry</option>
                         </select>
                     </div>
+
                 </div>
 
             </div>
@@ -513,10 +569,14 @@
         const DEFAULT_ZOOM = 9;
         const MAX_FIT_ZOOM = 14;
 
-        const HIKING_COLOR = "#d62828";
-        const HIKING_HOVER_COLOR = "#9d0208";
-        const CYCLING_COLOR = "#1d4ed8";
-        const CYCLING_HOVER_COLOR = "#1e40af";
+        /* Pro Route Color Tokens */
+        const HIKING_CORE = "#ff3b30";
+        const HIKING_GLOW = "rgba(255, 59, 48, 0.35)";
+        const HIKING_HOVER = "#d70015";
+
+        const CYCLING_CORE = "#007aff";
+        const CYCLING_GLOW = "rgba(0, 122, 255, 0.35)";
+        const CYCLING_HOVER = "#0051a8";
 
         const CURRENT_YEAR = new Date().getFullYear();
 
@@ -807,56 +867,76 @@
                 if (coordinates.length < 2) continue;
 
                 const isCycling = isCyclingActivity(activity.type);
-                const routeColor = isCycling ? CYCLING_COLOR : HIKING_COLOR;
-                const routeHoverColor = isCycling ? CYCLING_HOVER_COLOR : HIKING_HOVER_COLOR;
+                const coreColor = isCycling ? CYCLING_CORE : HIKING_CORE;
+                const glowColor = isCycling ? CYCLING_GLOW : HIKING_GLOW;
+                const hoverColor = isCycling ? CYCLING_HOVER : HIKING_HOVER;
                 const pinIcon = isCycling ? cyclingPinIcon : hikingPinIcon;
 
                 const popupContent = createPopup(activity);
 
-                const route = L.polyline(coordinates, {
-                    color: routeColor,
-                    weight: 4,
-                    opacity: 0.85,
+                // Pro Dual-Layer Route Effect: Glow layer underneath core line
+                const routeGlow = L.polyline(coordinates, {
+                    color: glowColor,
+                    weight: 10,
+                    opacity: 0.8,
                     lineCap: "round",
                     lineJoin: "round",
                     smoothFactor: 1
                 });
 
-                route.bindPopup(popupContent, { maxWidth: 300 });
+                const routeCore = L.polyline(coordinates, {
+                    color: coreColor,
+                    weight: 4,
+                    opacity: 0.95,
+                    lineCap: "round",
+                    lineJoin: "round",
+                    smoothFactor: 1
+                });
+
+                routeCore.bindPopup(popupContent, { maxWidth: 300 });
 
                 const startPoint = coordinates[0];
                 const marker = L.marker(startPoint, { icon: pinIcon });
                 marker.bindPopup(popupContent, { maxWidth: 300 });
 
                 const highlightRoute = function () {
-                    route.setStyle({
-                        color: routeHoverColor,
+                    routeCore.setStyle({
+                        color: hoverColor,
                         weight: 6,
                         opacity: 1
                     });
-                    route.bringToFront();
+                    routeGlow.setStyle({
+                        weight: 14,
+                        opacity: 0.9
+                    });
+                    routeCore.bringToFront();
                 };
 
                 const unhighlightRoute = function () {
-                    route.setStyle({
-                        color: routeColor,
+                    routeCore.setStyle({
+                        color: coreColor,
                         weight: 4,
-                        opacity: 0.85
+                        opacity: 0.95
+                    });
+                    routeGlow.setStyle({
+                        weight: 10,
+                        opacity: 0.8
                     });
                 };
 
-                route.on("mouseover", highlightRoute);
-                route.on("mouseout", unhighlightRoute);
+                routeCore.on("mouseover", highlightRoute);
+                routeCore.on("mouseout", unhighlightRoute);
                 marker.on("mouseover", highlightRoute);
                 marker.on("mouseout", unhighlightRoute);
 
-                route.addTo(displayedLayers);
+                routeGlow.addTo(displayedLayers);
+                routeCore.addTo(displayedLayers);
                 marker.addTo(displayedLayers);
 
                 activityLayerMap.set(activity.file, {
-                    route: route,
+                    route: routeCore,
                     marker: marker,
-                    bounds: route.getBounds()
+                    bounds: routeCore.getBounds()
                 });
 
                 renderedRouteCount++;
