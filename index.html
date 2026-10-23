@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="sk">
-
 <head>
     <meta charset="UTF-8">
 
@@ -9,15 +8,17 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>KST Sokolka Selec</title>
+    <title>Moje túry</title>
 
+    <!-- Leaflet CSS -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        integrity="sha256-p4NxAoJBhIINfQ3Wz0fXlJo8n5g7ZB3Jk8LykyYtQ="
         crossorigin=""
     >
 
+    <!-- Leaflet JavaScript -->
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -25,14 +26,19 @@
     ></script>
 
     <style>
-
         :root {
             --route-color: #d62828;
-            --background-color: #f4f6f8;
+            --route-hover-color: #9d0208;
+            --background-color: #f3f5f7;
             --card-background: #ffffff;
-            --border-color: #dfe3e8;
+            --border-color: #dde2e7;
             --primary-text: #1f2933;
-            --secondary-text: #626d78;
+            --secondary-text: #637381;
+            --accent-color: #d62828;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         html,
@@ -43,26 +49,27 @@
             padding: 0;
             overflow: hidden;
             font-family: Arial, Helvetica, sans-serif;
-            background: var(--background-color);
             color: var(--primary-text);
+            background: var(--background-color);
         }
 
         #dashboard {
             display: flex;
             flex-direction: column;
             width: 100%;
-            height: 100%;
+            height: 100vh;
         }
 
         /* =====================================================
-           Hlavička
+           Header
            ===================================================== */
 
         #header {
-            box-sizing: border-box;
-            padding: 12px 16px;
+            flex: 0 0 auto;
+            padding: 14px 18px;
             background: var(--card-background);
             border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
             z-index: 1000;
         }
 
@@ -76,7 +83,8 @@
 
         #pageTitle {
             margin: 0;
-            font-size: 21px;
+            font-size: 22px;
+            line-height: 1.2;
             font-weight: 700;
         }
 
@@ -88,83 +96,128 @@
 
         #filterContainer label {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         #yearFilter {
-            min-width: 130px;
-            padding: 7px 10px;
-            border: 1px solid #b8c0c8;
-            border-radius: 5px;
-            ========= */
+            min-width: 135px;
+            height: 36px;
+            padding: 6px 34px 6px 10px;
+            border: 1px solid #b8c1ca;
+            border-radius: 6px;
+            background: #ffffff;
+            color: var(--primary-text);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        #yearFilter:focus {
+            outline: 2px solid rgba(214, 40, 40, 0.2);
+            border-color: var(--accent-color);
+        }
+
+        /* =====================================================
+           Statistics
+           ===================================================== */
 
         #statistics {
             display: grid;
-            grid-template-columns:
-                repeat(4, minmax(120px, 1fr));
+            grid-template-columns: repeat(4, minmax(140px, 1fr));
             gap: 10px;
         }
 
         .statisticCard {
-            padding: 10px 12px;
+            min-width: 0;
+            padding: 11px 13px;
             border: 1px solid var(--border-color);
-            border-radius: 7px;
+            border-radius: 8px;
             background: #f8fafb;
         }
 
         .statisticLabel {
-            margin-bottom: 4px;
+            margin-bottom: 5px;
             color: var(--secondary-text);
             font-size: 12px;
+            line-height: 1.2;
         }
 
         .statisticValue {
-            font-size: 19px;
-            font-weight: 700;
+            overflow: hidden;
             color: var(--primary-text);
-        }
-
-        /* =====================================================
-           Mapa
-           ===================================================== */
-
-        #mapContainer {
-            position: relative;
-            flex: 1;
-            min-height: 0;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-        }
-
-        #loadingMessage {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            z-index: 2000;
-            transform: translateX(-50%);
-            padding: 10px 18px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.96);
-            box-shadow:
-                0 2px 10px rgba(0, 0, 0, 0.18);
-            font-size: 14px;
+            font-size: 19px;
+            line-height: 1.25;
+            font-weight: 700;
+            text-overflow: ellipsis;
             white-space: nowrap;
         }
 
         /* =====================================================
-           Popup
+           Map
+           ===================================================== */
+
+        #mapContainer {
+            position: relative;
+            flex: 1 1 auto;
+            min-height: 300px;
+            overflow: hidden;
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            background: #dce4e8;
+        }
+
+        #loadingMessage {
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            z-index: 2000;
+            transform: translateX(-50%);
+            padding: 10px 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 7px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        #errorMessage {
+            display: none;
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            z-index: 2001;
+            width: min(90%, 650px);
+            transform: translateX(-50%);
+            padding: 12px 16px;
+            border: 1px solid #dc2626;
+            border-radius: 7px;
+            background: #fff1f2;
+            color: #991b1b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           Leaflet popup
            ===================================================== */
 
         .activityPopup {
             min-width: 220px;
+            color: var(--primary-text);
+            font-family: Arial, Helvetica, sans-serif;
             line-height: 1.55;
         }
 
         .activityTitle {
             margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
             font-size: 16px;
             font-weight: 700;
         }
@@ -174,15 +227,14 @@
         }
 
         .activityDetail strong {
-            font-weight: 600;
+            font-weight: 700;
         }
 
         /* =====================================================
-           Mobil
+           Mobile layout
            ===================================================== */
 
         @media (max-width: 750px) {
-
             #header {
                 padding: 10px;
             }
@@ -191,20 +243,28 @@
                 align-items: flex-start;
                 flex-direction: column;
                 gap: 8px;
+                margin-bottom: 10px;
             }
 
             #pageTitle {
-                font-size: 18px;
+                font-size: 19px;
+            }
+
+            #filterContainer {
+                width: 100%;
+            }
+
+            #yearFilter {
+                flex: 1;
             }
 
             #statistics {
-                grid-template-columns:
-                    repeat(2, minmax(120px, 1fr));
+                grid-template-columns: repeat(2, minmax(120px, 1fr));
                 gap: 7px;
             }
 
             .statisticCard {
-                padding: 7px 9px;
+                padding: 8px 10px;
             }
 
             .statisticValue {
@@ -212,43 +272,38 @@
             }
         }
 
+        @media (max-width: 380px) {
+            #statistics {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body>
-
     <div id="dashboard">
 
         <header id="header">
-
             <div id="headerTop">
-
                 <h1 id="pageTitle">
                     Moje túry
                 </h1>
 
                 <div id="filterContainer">
-
                     <label for="yearFilter">
                         Rok:
                     </label>
 
                     <select id="yearFilter">
-
                         <option value="all">
                             Všetky roky
                         </option>
-
                     </select>
-
                 </div>
-
             </div>
 
             <div id="statistics">
-
                 <div class="statisticCard">
-
                     <div class="statisticLabel">
                         Počet túr
                     </div>
@@ -259,11 +314,9 @@
                     >
                         0
                     </div>
-
                 </div>
 
                 <div class="statisticCard">
-
                     <div class="statisticLabel">
                         Celková vzdialenosť
                     </div>
@@ -272,13 +325,11 @@
                         id="totalDistance"
                         class="statisticValue"
                     >
-                        0 km
+                        0,0 km
                     </div>
-
                 </div>
 
                 <div class="statisticCard">
-
                     <div class="statisticLabel">
                         Celkové stúpanie
                     </div>
@@ -289,11 +340,9 @@
                     >
                         0 m
                     </div>
-
                 </div>
 
                 <div class="statisticCard">
-
                     <div class="statisticLabel">
                         Celkový čas
                     </div>
@@ -304,32 +353,27 @@
                     >
                         0 h 00 min
                     </div>
-
                 </div>
-
             </div>
-
         </header>
 
         <main id="mapContainer">
-
             <div id="loadingMessage">
                 Načítavam túry...
             </div>
 
-            <div id="map"></div>
+            <div id="errorMessage"></div>
 
+            <div id="map"></div>
         </main>
 
     </div>
 
     <script>
-
         "use strict";
 
-
         /* =====================================================
-           Konfigurácia
+           Configuration
            ===================================================== */
 
         const DEFAULT_CENTER = [
@@ -339,14 +383,51 @@
 
         const DEFAULT_ZOOM = 9;
 
+        const MAX_FIT_ZOOM = 14;
+
         const ROUTE_COLOR = "#d62828";
+        const ROUTE_HOVER_COLOR = "#9d0208";
 
         const CURRENT_YEAR =
             new Date().getFullYear();
 
+        /* =====================================================
+           DOM elements
+           ===================================================== */
+
+        const yearFilter =
+            document.getElementById("yearFilter");
+
+        const activityCountElement =
+            document.getElementById("activityCount");
+
+        const totalDistanceElement =
+            document.getElementById("totalDistance");
+
+        const totalElevationElement =
+            document.getElementById("totalElevation");
+
+        const totalTimeElement =
+            document.getElementById("totalTime");
+
+        const loadingMessage =
+            document.getElementById("loadingMessage");
+
+        const errorMessage =
+            document.getElementById("errorMessage");
 
         /* =====================================================
-           Inicializácia mapy
+           Verify Leaflet
+           ===================================================== */
+
+        if (typeof L === "undefined") {
+            throw new Error(
+                "Knižnica Leaflet sa nenačítala."
+            );
+        }
+
+        /* =====================================================
+           Map initialization
            ===================================================== */
 
         const map = L.map(
@@ -360,68 +441,34 @@
             DEFAULT_ZOOM
         );
 
-        L.tileLayer(
+        const baseMap = L.tileLayer(
             "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
             {
+                minZoom: 2,
                 maxZoom: 19,
-
                 attribution:
-                    "&copy; OpenStreetMap contributors"
+                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }
-        ).addTo(map);
+        );
 
+        baseMap.addTo(map);
 
-        /* =====================================================
-           HTML elementy
-           ===================================================== */
+        const displayedLayers =
+            L.featureGroup();
 
-        const yearFilter =
-            document.getElementById(
-                "yearFilter"
-            );
-
-        const activityCountElement =
-            document.getElementById(
-                "activityCount"
-            );
-
-        const totalDistanceElement =
-            document.getElementById(
-                "totalDistance"
-            );
-
-        const totalElevationElement =
-            document.getElementById(
-                "totalElevation"
-            );
-
-        const totalTimeElement =
-            document.getElementById(
-                "totalTime"
-            );
-
-        const loadingMessage =
-            document.getElementById(
-                "loadingMessage"
-            );
-
+        displayedLayers.addTo(map);
 
         /* =====================================================
-           Dáta aplikácie
+           Application data
            ===================================================== */
 
         let activities = [];
 
-        const displayedLayers =
-            L.featureGroup().addTo(map);
-
-
         /* =====================================================
-           Pomocné funkcie
+           Formatting helpers
            ===================================================== */
 
         function escapeHtml(value) {
-
             if (
                 value === null
                 ||
@@ -438,9 +485,7 @@
                 .replaceAll("'", "&#039;");
         }
 
-
         function formatDate(dateValue) {
-
             if (!dateValue) {
                 return "Neznámy";
             }
@@ -449,23 +494,11 @@
                 String(dateValue).split("-");
 
             if (dateParts.length !== 3) {
-                return dateValue;
+                return String(dateValue);
             }
 
             return (
-                dateParts[2]
-                + ". "
-                + dateParts[1]
-                + ". "
-                + dateParts[0]
-            );
-        }
-
-
-        function formatActivityType(type) {
-
-            const normalizedType =
-                String(type || "")
+                dateParts  .trim()
                     .toLowerCase();
 
             const translations = {
@@ -473,8 +506,10 @@
                 "hiking": "Turistika",
                 "running": "Beh",
                 "trail_running": "Trailový beh",
+                "trail running": "Trailový beh",
                 "cycling": "Cyklistika",
-                "mountain_biking": "Horská cyklistika"
+                "mountain_biking": "Horská cyklistika",
+                "mountain biking": "Horská cyklistika"
             };
 
             return (
@@ -486,16 +521,12 @@
             );
         }
 
-
-        function formatDistance(
-            kilometers
-        ) {
+        function formatDistance(kilometers) {
+            const safeDistance =
+                Number(kilometers) || 0;
 
             return (
-                (
-                    Number(kilometers)
-                    || 0
-                ).toLocaleString(
+                safeDistance.toLocaleString(
                     "sk-SK",
                     {
                         minimumFractionDigits: 1,
@@ -506,32 +537,28 @@
             );
         }
 
-
-        function formatElevation(
-            meters
-        ) {
-
-            return (
+        function formatElevation(meters) {
+            const safeElevation =
                 Math.round(
                     Number(meters) || 0
-                ).toLocaleString("sk-SK")
+                );
+
+            return (
+                safeElevation.toLocaleString("sk-SK")
                 + " m"
             );
         }
 
-
-        function formatDuration(
-            seconds
-        ) {
+        function formatDuration(seconds) {
+            const safeSeconds =
+                Math.max(
+                    0,
+                    Number(seconds) || 0
+                );
 
             const totalMinutes =
                 Math.round(
-                    (
-                        Number(seconds)
-                        || 0
-                    )
-                    /
-                    60
+                    safeSeconds / 60
                 );
 
             const hours =
@@ -545,162 +572,119 @@
             return (
                 hours.toLocaleString("sk-SK")
                 + " h "
-                + String(minutes).padStart(
-                    2,
-                    "0"
-                )
+                + String(minutes).padStart(2, "0")
                 + " min"
             );
         }
 
-
         /* =====================================================
-           Popup aktivity
+           Popup
            ===================================================== */
 
         function createPopup(activity) {
-
             return `
-
                 <div class="activityPopup">
 
                     <div class="activityTitle">
-
                         ${escapeHtml(
-                            activity.name
+                            activity.name || "Túra"
                         )}
-
                     </div>
 
                     <div class="activityDetail">
-
                         Dátum:
                         <strong>
-
                             ${escapeHtml(
-                                formatDate(
-                                    activity.date
-                                )
+                                formatDate(activity.date)
                             )}
-
                         </strong>
-
                     </div>
 
                     <div class="activityDetail">
-
                         Typ:
                         <strong>
-
                             ${escapeHtml(
                                 formatActivityType(
                                     activity.type
                                 )
                             )}
-
                         </strong>
-
                     </div>
 
                     <div class="activityDetail">
-
                         Vzdialenosť:
                         <strong>
-
                             ${escapeHtml(
                                 formatDistance(
-                                    activity
-                                        .distanceKilometers
+                                    activity.distanceKilometers
                                 )
                             )}
-
                         </strong>
-
                     </div>
 
                     <div class="activityDetail">
-
                         Stúpanie:
                         <strong>
-
                             ${escapeHtml(
                                 formatElevation(
-                                    activity
-                                        .elevationGainMeters
+                                    activity.elevationGainMeters
                                 )
                             )}
-
                         </strong>
-
                     </div>
 
                     <div class="activityDetail">
-
                         Klesanie:
                         <strong>
-
                             ${escapeHtml(
                                 formatElevation(
-                                    activity
-                                        .elevationLossMeters
+                                    activity.elevationLossMeters
                                 )
                             )}
-
                         </strong>
-
                     </div>
 
                     <div class="activityDetail">
-
                         Čas:
                         <strong>
-
                             ${escapeHtml(
                                 formatDuration(
-                                    activity
-                                        .durationSeconds
+                                    activity.durationSeconds
                                 )
                             )}
-
                         </strong>
-
                     </div>
 
                 </div>
-
             `;
         }
 
-
         /* =====================================================
-           Filter rokov
+           Year filter
            ===================================================== */
 
         function populateYearFilter(years) {
-
             const sortedYears = [
-                ...new Set(years)
-            ]
-                .filter(
-                    year =>
-                        year !== null
-                        &&
-                        year !== undefined
+                ...new Set(
+                    years
+                        .filter(
+                            year =>
+                                year !== null
+                                &&
+                                year !== undefined
+                                &&
+                                String(year).trim() !== ""
+                        )
+                        .map(Number)
+                        .filter(Number.isFinite)
                 )
-                .sort(
-                    (a, b) =>
-                        Number(b) - Number(a)
-                );
+            ].sort(
+                (a, b) => b - a
+            );
 
-            for (
-                const year
-                of sortedYears
-            ) {
-
+            for (const year of sortedYears) {
                 const option =
-                    document.createElement(
-                        "option"
-                    );
+                    document.createElement("option");
 
                 option.value =
                     String(year);
@@ -711,39 +695,25 @@
                 yearFilter.appendChild(option);
             }
 
-            const currentYearExists =
-                sortedYears.some(
-                    year =>
-                        Number(year)
-                        === CURRENT_YEAR
-                );
-
-            if (currentYearExists) {
-
+            if (
+                sortedYears.includes(CURRENT_YEAR)
+            ) {
                 yearFilter.value =
                     String(CURRENT_YEAR);
 
             } else if (
                 sortedYears.length > 0
             ) {
-
                 yearFilter.value =
                     String(sortedYears[0]);
 
             } else {
-
                 yearFilter.value =
                     "all";
             }
         }
 
-
-        /* =====================================================
-           Vybrané aktivity
-           ===================================================== */
-
         function getSelectedActivities() {
-
             const selectedYear =
                 yearFilter.value;
 
@@ -758,15 +728,13 @@
             );
         }
 
-
         /* =====================================================
-           Štatistiky
+           Statistics
            ===================================================== */
 
         function updateStatistics(
             selectedActivities
         ) {
-
             let totalDistance = 0;
             let totalElevation = 0;
             let totalDuration = 0;
@@ -775,27 +743,20 @@
                 const activity
                 of selectedActivities
             ) {
-
                 totalDistance +=
                     Number(
-                        activity
-                            .distanceKilometers
-                    )
-                    || 0;
+                        activity.distanceKilometers
+                    ) || 0;
 
                 totalElevation +=
                     Number(
-                        activity
-                            .elevationGainMeters
-                    )
-                    || 0;
+                        activity.elevationGainMeters
+                    ) || 0;
 
                 totalDuration +=
                     Number(
-                        activity
-                            .durationSeconds
-                    )
-                    || 0;
+                        activity.durationSeconds
+                    ) || 0;
             }
 
             activityCountElement.textContent =
@@ -812,72 +773,110 @@
                 formatDuration(totalDuration);
         }
 
+        /* =====================================================
+           Coordinate validation
+           ===================================================== */
+
+        function getValidCoordinates(activity) {
+            if (
+                !Array.isArray(
+                    activity.coordinates
+                )
+            ) {
+                return [];
+            }
+
+            return activity.coordinates
+                .filter(
+                    coordinate =>
+                        Array.isArray(coordinate)
+                        &&
+                        coordinate.length >= 2
+                        &&
+                        Number.isFinite(
+                            Number(coordinate[0])
+                        )
+                        &&
+                        Number.isFinite(
+                            Number(coordinate[1])
+                        )
+                )
+                .map(
+                    coordinate => [
+                        Number(coordinate[0]),
+                        Number(coordinate[1])
+                    ]
+                );
+        }
 
         /* =====================================================
-           Vykreslenie vybraného roka
+           Map rendering
            ===================================================== */
 
         function renderSelectedActivities() {
-
             const selectedActivities =
                 getSelectedActivities();
 
             displayedLayers.clearLayers();
 
+            let renderedRouteCount = 0;
+
             for (
                 const activity
                 of selectedActivities
             ) {
+                const coordinates =
+                    getValidCoordinates(activity);
 
-                if (
-                    !Array.isArray(
-                        activity.coordinates
-                    )
-                    ||
-                    activity.coordinates.length < 2
-                ) {
-
+                if (coordinates.length < 2) {
                     console.warn(
                         "Aktivita nemá platné súradnice:",
-                        activity.file
+                        activity.file,
+                        activity.name
                     );
 
                     continue;
                 }
 
                 const route = L.polyline(
-                    activity.coordinates,
+                    coordinates,
                     {
                         color: ROUTE_COLOR,
                         weight: 4,
-                        opacity: 0.82,
+                        opacity: 0.85,
                         lineCap: "round",
-                        lineJoin: "round"
+                        lineJoin: "round",
+                        smoothFactor: 1
                     }
                 );
 
                 route.bindPopup(
-                    createPopup(activity)
+                    createPopup(activity),
+                    {
+                        maxWidth: 320
+                    }
                 );
 
                 route.on(
                     "mouseover",
-                    function() {
-
+                    function () {
                         route.setStyle({
+                            color: ROUTE_HOVER_COLOR,
                             weight: 6,
                             opacity: 1
                         });
+
+                        route.bringToFront();
                     }
                 );
 
                 route.on(
                     "mouseout",
-                    function() {
-
+                    function () {
                         route.setStyle({
+                            color: ROUTE_COLOR,
                             weight: 4,
-                            opacity: 0.82
+                            opacity: 0.85
                         });
                     }
                 );
@@ -885,56 +884,98 @@
                 route.addTo(
                     displayedLayers
                 );
+
+                renderedRouteCount++;
             }
 
             updateStatistics(
                 selectedActivities
             );
 
-            const bounds =
-                displayedLayers.getBounds();
+            if (renderedRouteCount > 0) {
+                const bounds =
+                    displayedLayers.getBounds();
 
-            if (bounds.isValid()) {
-
-                map.fitBounds(
-                    bounds,
-                    {
-                        padding: [30, 30],
-                        maxZoom: 13
-                    }
-                );
+                if (bounds.isValid()) {
+                    map.fitBounds(
+                        bounds,
+                        {
+                            padding: [35, 35],
+                            maxZoom: MAX_FIT_ZOOM
+                        }
+                    );
+                }
 
             } else {
-
                 map.setView(
                     DEFAULT_CENTER,
                     DEFAULT_ZOOM
                 );
             }
+
+            /*
+             * Recalculate the map size after header/statistics
+             * layout has been rendered.
+             */
+
+            window.setTimeout(
+                function () {
+                    map.invalidateSize();
+
+                    if (
+                        renderedRouteCount > 0
+                        &&
+                        displayedLayers
+                            .getBounds()
+                            .isValid()
+                    ) {
+                        map.fitBounds(
+                            displayedLayers.getBounds(),
+                            {
+                                padding: [35, 35],
+                                maxZoom: MAX_FIT_ZOOM
+                            }
+                        );
+                    }
+                },
+                100
+            );
         }
 
+        /* =====================================================
+           Error display
+           ===================================================== */
+
+        function showError(message) {
+            loadingMessage.style.display =
+                "none";
+
+            errorMessage.textContent =
+                message;
+
+            errorMessage.style.display =
+                "block";
+        }
 
         /* =====================================================
-           Inicializácia
+           Initialization
            ===================================================== */
 
         async function initializeMap() {
-
             try {
-
                 const response =
                     await fetch(
-                        "hikes.json",
+                        "hikes.json?v="
+                        + Date.now(),
                         {
-                            cache: "no-cache"
+                            cache: "no-store"
                         }
                     );
 
                 if (!response.ok) {
-
                     throw new Error(
-                        "Nepodarilo sa načítať "
-                        + "hikes.json. HTTP stav: "
+                        "Nepodarilo sa načítať hikes.json. "
+                        + "HTTP stav: "
                         + response.status
                     );
                 }
@@ -943,39 +984,27 @@
                     await response.json();
 
                 if (
+                    !data
+                    ||
                     !Array.isArray(
                         data.activities
                     )
                 ) {
-
                     throw new Error(
-                        "Súbor hikes.json "
-                        + "neobsahuje pole activities."
+                        "Súbor hikes.json neobsahuje platné pole activities."
                     );
                 }
 
                 activities =
                     data.activities;
 
-                let years;
-
-                if (
-                    Array.isArray(
-                        data.years
-                    )
-                ) {
-
-                    years =
-                        data.years;
-
-                } else {
-
-                    years =
-                        activities.map(
+                const years =
+                    Array.isArray(data.years)
+                        ? data.years
+                        : activities.map(
                             activity =>
                                 activity.year
                         );
-                }
 
                 populateYearFilter(years);
 
@@ -984,21 +1013,28 @@
                 loadingMessage.style.display =
                     "none";
 
-            } catch (error) {
+                window.setTimeout(
+                    function () {
+                        map.invalidateSize();
+                    },
+                    200
+                );
 
+            } catch (error) {
                 console.error(error);
 
-                loadingMessage.textContent =
-                    "Nepodarilo sa načítať údaje o túrach.";
+                showError(
+                    "Nepodarilo sa načítať údaje o túrach. "
+                    + error.message
+                );
 
                 activityCountElement.textContent =
                     "Chyba";
             }
         }
 
-
         /* =====================================================
-           Udalosti
+           Events
            ===================================================== */
 
         yearFilter.addEventListener(
@@ -1006,15 +1042,18 @@
             renderSelectedActivities
         );
 
+        window.addEventListener(
+            "resize",
+            function () {
+                map.invalidateSize();
+            }
+        );
 
         /* =====================================================
-           Spustenie
+           Start
            ===================================================== */
 
         initializeMap();
-
     </script>
-
 </body>
-
 </html>
