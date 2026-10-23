@@ -11,14 +11,16 @@
 
     <title>KST Sokolka Selec</title>
 
-    <!-- Leaflet CSS: intentionally without integrity attribute -->
+    <!-- Leaflet CSS -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 
-    <!-- Leaflet JavaScript: intentionally without integrity attribute -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet JavaScript -->
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
 
     <style>
         :root {
@@ -205,7 +207,7 @@
         }
 
         /* =====================================================
-           Leaflet popup
+           Popup trasy
            ===================================================== */
 
         .activityPopup {
@@ -272,6 +274,12 @@
                 font-size: 16px;
             }
         }
+
+        @media (max-width: 380px) {
+            #statistics {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
@@ -284,7 +292,7 @@
             <div id="headerTop">
 
                 <h1 id="pageTitle">
-                    Moje túry
+                    KST Sokolka Selec
                 </h1>
 
                 <div id="filterContainer">
@@ -294,9 +302,11 @@
                     </label>
 
                     <select id="yearFilter">
+
                         <option value="all">
                             Všetky roky
                         </option>
+
                     </select>
 
                 </div>
@@ -430,7 +440,7 @@
             document.getElementById("errorMessage");
 
         /* =====================================================
-           Overenie Leaflet knižnice
+           Kontrola Leaflet
            ===================================================== */
 
         if (typeof L === "undefined") {
@@ -489,16 +499,16 @@
 
         let activities = [];
 
-        /* =====================================================
-           Formátovanie
+      ovanie
            ===================================================== */
 
         function escapeHtml(value) {
-
             if (
                 value === null
                 ||
-        ;
+                value === undefined
+            ) {
+                return "";
             }
 
             return String(value)
@@ -510,7 +520,6 @@
         }
 
         function formatDate(dateValue) {
-
             if (!dateValue) {
                 return "Neznámy";
             }
@@ -532,7 +541,6 @@
         }
 
         function formatActivityType(type) {
-
             const normalizedType =
                 String(type || "")
                     .trim()
@@ -559,7 +567,6 @@
         }
 
         function formatDistance(kilometers) {
-
             const safeDistance =
                 Number(kilometers) || 0;
 
@@ -576,7 +583,6 @@
         }
 
         function formatElevation(meters) {
-
             const safeElevation =
                 Math.round(
                     Number(meters) || 0
@@ -589,7 +595,6 @@
         }
 
         function formatDuration(seconds) {
-
             const safeSeconds =
                 Math.max(
                     0,
@@ -622,7 +627,6 @@
            ===================================================== */
 
         function createPopup(activity) {
-
             return `
                 <div class="activityPopup">
 
@@ -705,27 +709,30 @@
            ===================================================== */
 
         function populateYearFilter(years) {
-
             const sortedYears = [
                 ...new Set(
                     years
                         .filter(
-                            year =>
-                                year !== null
-                                &&
-                                year !== undefined
-                                &&
-                                String(year).trim() !== ""
+                            function (year) {
+                                return (
+                                    year !== null
+                                    &&
+                                    year !== undefined
+                                    &&
+                                    String(year).trim() !== ""
+                                );
+                            }
                         )
                         .map(Number)
                         .filter(Number.isFinite)
                 )
             ].sort(
-                (a, b) => b - a
+                function (a, b) {
+                    return b - a;
+                }
             );
 
             for (const year of sortedYears) {
-
                 const option =
                     document.createElement("option");
 
@@ -757,7 +764,6 @@
         }
 
         function getSelectedActivities() {
-
             const selectedYear =
                 yearFilter.value;
 
@@ -766,9 +772,12 @@
             }
 
             return activities.filter(
-                activity =>
-                    String(activity.year)
-                    === selectedYear
+                function (activity) {
+                    return (
+                        String(activity.year)
+                        === selectedYear
+                    );
+                }
             );
         }
 
@@ -779,7 +788,6 @@
         function updateStatistics(
             selectedActivities
         ) {
-
             let totalDistance = 0;
             let totalElevation = 0;
             let totalDuration = 0;
@@ -823,7 +831,6 @@
            ===================================================== */
 
         function getValidCoordinates(activity) {
-
             if (
                 !Array.isArray(
                     activity.coordinates
@@ -834,33 +841,37 @@
 
             return activity.coordinates
                 .filter(
-                    coordinate =>
-                        Array.isArray(coordinate)
-                        &&
-                        coordinate.length >= 2
-                        &&
-                        Number.isFinite(
-                            Number(coordinate[0])
-                        )
-                        &&
-                        Number.isFinite(
-                            Number(coordinate[1])
-                        )
+                    function (coordinate) {
+                        return (
+                            Array.isArray(coordinate)
+                            &&
+                            coordinate.length >= 2
+                            &&
+                            Number.isFinite(
+                                Number(coordinate[0])
+                            )
+                            &&
+                            Number.isFinite(
+                                Number(coordinate[1])
+                            )
+                        );
+                    }
                 )
                 .map(
-                    coordinate => [
-                        Number(coordinate[0]),
-                        Number(coordinate[1])
-                    ]
+                    function (coordinate) {
+                        return [
+                            Number(coordinate[0]),
+                            Number(coordinate[1])
+                        ];
+                    }
                 );
         }
 
         /* =====================================================
-           Vykreslenie trás
+           Zobrazenie trás
            ===================================================== */
 
         function renderSelectedActivities() {
-
             const selectedActivities =
                 getSelectedActivities();
 
@@ -872,12 +883,10 @@
                 const activity
                 of selectedActivities
             ) {
-
                 const coordinates =
                     getValidCoordinates(activity);
 
                 if (coordinates.length < 2) {
-
                     console.warn(
                         "Aktivita nemá platné súradnice:",
                         activity.file,
@@ -909,7 +918,6 @@
                 route.on(
                     "mouseover",
                     function () {
-
                         route.setStyle({
                             color: ROUTE_HOVER_COLOR,
                             weight: 6,
@@ -923,7 +931,6 @@
                 route.on(
                     "mouseout",
                     function () {
-
                         route.setStyle({
                             color: ROUTE_COLOR,
                             weight: 4,
@@ -932,9 +939,7 @@
                     }
                 );
 
-                route.addTo(
-                    displayedLayers
-                );
+                route.addTo(displayedLayers);
 
                 renderedRouteCount++;
             }
@@ -946,12 +951,10 @@
             map.invalidateSize();
 
             if (renderedRouteCount > 0) {
-
                 const bounds =
                     displayedLayers.getBounds();
 
                 if (bounds.isValid()) {
-
                     map.fitBounds(
                         bounds,
                         {
@@ -962,7 +965,6 @@
                 }
 
             } else {
-
                 map.setView(
                     DEFAULT_CENTER,
                     DEFAULT_ZOOM
@@ -971,16 +973,13 @@
 
             window.setTimeout(
                 function () {
-
                     map.invalidateSize();
 
                     if (renderedRouteCount > 0) {
-
                         const bounds =
                             displayedLayers.getBounds();
 
                         if (bounds.isValid()) {
-
                             map.fitBounds(
                                 bounds,
                                 {
@@ -1000,7 +999,6 @@
            ===================================================== */
 
         function showError(message) {
-
             loadingMessage.style.display =
                 "none";
 
@@ -1016,20 +1014,16 @@
            ===================================================== */
 
         async function initializeMap() {
-
             try {
-
                 const response =
                     await fetch(
-                        "hikes.json?v="
-                        + Date.now(),
+                        "hikes.json?v=" + Date.now(),
                         {
                             cache: "no-store"
                         }
                     );
 
                 if (!response.ok) {
-
                     throw new Error(
                         "Nepodarilo sa načítať hikes.json. "
                         + "HTTP stav: "
@@ -1059,8 +1053,9 @@
                     Array.isArray(data.years)
                         ? data.years
                         : activities.map(
-                            activity =>
-                                activity.year
+                            function (activity) {
+                                return activity.year;
+                            }
                         );
 
                 populateYearFilter(years);
@@ -1078,7 +1073,6 @@
                 );
 
             } catch (error) {
-
                 console.error(error);
 
                 showError(
