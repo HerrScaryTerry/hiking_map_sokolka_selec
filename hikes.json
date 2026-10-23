@@ -1,0 +1,32 @@
+{
+  "activities": [
+    {
+      "file": "activity_24569811812.gpx",
+      "name": "Brno Chôdza",
+      "date": "2026-10-01",
+      "year": 2026,
+      "timestamp": "2026-10-01T16:02:11+00:00",
+      "type": "walking"
+    },
+    {
+      "file": "activity_24416969485.gpx",
+      "name": "Blatnica Chôdza",
+      "date": "2026-09-19",
+      "year": 2026,
+      "timestamp": "2026-09-19T06:40:02+00:00",
+      "type": "walking"
+    },
+    {
+      "file": "activity_23900904773.gpx",
+      "name": "Mníchova Lehota Chôdza",
+      "date": "2026-08-08",
+      "year": 2026,
+      "timestamp": "2026-08-08T06:51:24+00:00",
+      "type": "walking"
+    }
+  ],
+  "years": [
+    2026
+  ],
+  "errors": []
+}
