@@ -102,7 +102,7 @@
 
         #header {
             flex: 0 0 auto;
-            padding: 14px 18px;
+            padding: 12px 14px;
             background: var(--site-header-bg);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -116,15 +116,13 @@
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            gap: 16px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
+            margin-bottom: 10px;
         }
 
         #filtersWrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
             width: 100%;
         }
@@ -132,38 +130,30 @@
         .filterGroup {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             background: rgba(255, 255, 255, 0.08);
-            padding: 4px 10px;
-            border-radius: 20px;
+            padding: 4px 8px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.12);
         }
 
         .filterGroup label {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: rgba(255, 255, 255, 0.9);
-        }
-
-        .filterIcon {
-            width: 14px;
-            height: 14px;
-            fill: var(--site-peach);
+            white-space: nowrap;
         }
 
         select.appSelect {
-            height: 32px;
-            padding: 0 10px;
+            height: 30px;
+            padding: 0 8px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.95);
             color: var(--primary-text);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -181,16 +171,18 @@
         }
 
         #yearFilter {
-            min-width: 95px;
+            flex: 0 1 auto;
+            min-width: 90px;
         }
 
         #typeFilter {
-            min-width: 135px;
+            flex: 1 1 auto;
+            min-width: 130px;
         }
 
         #hikeFilter {
-            min-width: 160px;
-            max-width: 280px;
+            flex: 1 1 100%;
+            width: 100%;
         }
 
         /* =====================================================
@@ -200,14 +192,14 @@
         #statistics {
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 10px;
+            gap: 8px;
         }
 
         .statisticCard {
             min-width: 0;
-            padding: 10px 12px;
+            padding: 8px 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
+            border-radius: 8px;
             background: var(--card-background);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -246,7 +238,7 @@
         .statisticValue {
             overflow: hidden;
             color: var(--primary-text);
-            font-size: 17px;
+            font-size: 16px;
             line-height: 1.2;
             font-weight: 800;
             text-overflow: ellipsis;
@@ -406,42 +398,16 @@
             }
 
             #header {
-                padding: 10px 12px;
-            }
-
-            #headerTop {
-                margin-bottom: 10px;
-            }
-
-            #filtersWrapper {
-                justify-content: space-between;
-                gap: 8px;
-            }
-
-            .filterGroup {
-                flex: 1 1 calc(50% - 6px);
-                min-width: 0;
-            }
-
-            .filterGroup:nth-child(3) {
-                flex: 1 1 100%;
-            }
-
-            select.appSelect {
-                width: 100%;
-            }
-
-            #hikeFilter {
-                max-width: none;
+                padding: 10px;
             }
 
             #statistics {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 8px;
+                gap: 6px;
             }
 
             .statisticCard {
-                padding: 8px 10px;
+                padding: 6px 8px;
             }
 
             .statisticValue {
@@ -472,21 +438,15 @@
 
                 <div id="filtersWrapper">
                     
-                    <div class="filterGroup">
-                        <label for="yearFilter">
-                            <svg class="filterIcon" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
-                            Rok:
-                        </label>
+                    <div class="filterGroup" id="yearGroup">
+                        <label for="yearFilter">Rok:</label>
                         <select id="yearFilter" class="appSelect">
-                            <option value="all">Všetky roky</option>
+                            <option value="all">Všetky</option>
                         </select>
                     </div>
 
-                    <div class="filterGroup">
-                        <label for="typeFilter">
-                            <svg class="filterIcon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                            Typ:
-                        </label>
+                    <div class="filterGroup" id="typeGroup">
+                        <label for="typeFilter">Typ:</label>
                         <select id="typeFilter" class="appSelect">
                             <option value="all">Všetky aktivity</option>
                             <option value="hiking">Turistika</option>
@@ -494,11 +454,8 @@
                         </select>
                     </div>
 
-                    <div class="filterGroup">
-                        <label for="hikeFilter">
-                            <svg class="filterIcon" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-                            Trasa:
-                        </label>
+                    <div class="filterGroup" id="hikeGroup">
+                        <label for="hikeFilter">Trasa:</label>
                         <select id="hikeFilter" class="appSelect">
                             <option value="all">Všetky túry</option>
                         </select>
