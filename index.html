@@ -22,8 +22,10 @@
 
     <style>
         :root {
-            --route-color: #d62828;
-            --route-hover-color: #9d0208;
+            --hiking-color: #d62828;
+            --hiking-hover-color: #9d0208;
+            --cycling-color: #1d4ed8;
+            --cycling-hover-color: #1e40af;
             --background-color: #f3f5f7;
             --card-background: #ffffff;
             --border-color: #dde2e7;
@@ -141,16 +143,20 @@
 
         select.appSelect:focus {
             outline: 2px solid rgba(214, 40, 40, 0.2);
-            border-color: var(--route-color);
+            border-color: var(--hiking-color);
         }
 
         #yearFilter {
-            min-width: 110px;
+            min-width: 100px;
+        }
+
+        #typeFilter {
+            min-width: 130px;
         }
 
         #hikeFilter {
-            min-width: 180px;
-            max-width: 260px;
+            min-width: 160px;
+            max-width: 240px;
         }
 
         /* =====================================================
@@ -210,9 +216,8 @@
             background: #dce4e8;
         }
 
-        /* Prekryvná vrstva, ktorá zabraňuje zachyteniu skrolovania stránky mobilu */
         #mapOverlay {
-            display: none; /* Zapne sa len na dotykových zariadeniach */
+            display: none;
             position: absolute;
             inset: 0;
             background: rgba(0, 0, 0, 0.35);
@@ -297,29 +302,46 @@
         }
 
         /* =====================================================
-           Custom Pin Style
+           Custom Pin Styles
            ===================================================== */
 
-        .startPin {
-            background: var(--route-color);
+        .startPinHiking {
+            background: var(--hiking-color);
             border: 2px solid #ffffff;
             border-radius: 50%;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             cursor: pointer;
             transition: transform 0.15s ease, background-color 0.15s ease;
         }
+        .startPinHiking:hover {
+            background: var(--hiking-hover-color);
+            transform: scale(1.25);
+        }
+
+        .startPinCycling {
+            background: var(--cycling-color);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        .startPinCycling:hover {
+            background: var(--cycling-hover-color);
+            transform: scale(1.25);
+        }
 
         /* =====================================================
            Mobilné zobrazenie
            ===================================================== */
 
-        @media (max-width: 750px) {
+        @media (max-width: 850px) {
             #mobileNoticeBanner {
                 display: block;
             }
 
             #mapOverlay {
-                display: flex; /* Zobrazí vrstvu na mobiloch štandardne */
+                display: flex;
             }
 
             #header {
@@ -398,6 +420,15 @@
                     </div>
 
                     <div class="filterGroup">
+                        <label for="typeFilter">Typ:</label>
+                        <select id="typeFilter" class="appSelect">
+                            <option value="all">Všetky aktivity</option>
+                            <option value="hiking">Turistika</option>
+                            <option value="cycling">Cyklistika</option>
+                        </select>
+                    </div>
+
+                    <div class="filterGroup">
                         <label for="hikeFilter">Túra:</label>
                         <select id="hikeFilter" class="appSelect">
                             <option value="all">Všetky túry</option>
@@ -410,7 +441,7 @@
             <div id="statistics">
 
                 <div class="statisticCard">
-                    <div class="statisticLabel">Počet túr</div>
+                    <div class="statisticLabel">Počet aktivít</div>
                     <div id="activityCount" class="statisticValue">0</div>
                 </div>
 
@@ -436,14 +467,14 @@
         <main id="mapContainer">
 
             <div id="loadingMessage">
-                Načítavam túry...
+                Načítavam dáta...
             </div>
 
             <div id="errorMessage"></div>
 
             <div id="map"></div>
 
-            <!-- Interaktívny predel pre mobily, aby sa dalo skrolovať okolo mapy -->
+            <!-- Interaktívny predel pre mobily -->
             <div id="mapOverlay">
                 <span>📍 Ťuknutím aktivujete mapu<br><small style="font-weight: normal; opacity: 0.9;">(Umožní plynulé skrolovanie stránky)</small></span>
             </div>
@@ -455,42 +486,28 @@
     <script>
         "use strict";
 
-        /* =====================================================
-           Odkaz na celú obrazovku pre mobilný banner
-           ===================================================== */
         document.getElementById("fullMapLink").href = window.location.href;
 
-        /* Odomknutie mapy pri dotyku na mobilnom zariadení */
         const mapOverlay = document.getElementById("mapOverlay");
-        const mapContainer = document.getElementById("mapContainer");
-
         if (mapOverlay) {
             mapOverlay.addEventListener("click", function () {
                 mapOverlay.classList.add("hidden");
             });
-
-            // Ak používateľ scrolloval preč z mapy, môžeme prekryvne okno nechať zapnúť alebo ho nechať odomknuté.
-            // Tu po ťuknutí zostane mapa plne ovládateľná.
         }
-
-        /* =====================================================
-           Konfigurácia
-           ===================================================== */
 
         const DEFAULT_CENTER = [48.55, 17.50];
         const DEFAULT_ZOOM = 9;
         const MAX_FIT_ZOOM = 14;
 
-        const ROUTE_COLOR = "#d62828";
-        const ROUTE_HOVER_COLOR = "#9d0208";
+        const HIKING_COLOR = "#d62828";
+        const HIKING_HOVER_COLOR = "#9d0208";
+        const CYCLING_COLOR = "#1d4ed8";
+        const CYCLING_HOVER_COLOR = "#1e40af";
 
         const CURRENT_YEAR = new Date().getFullYear();
 
-        /* =====================================================
-           HTML elementy
-           ===================================================== */
-
         const yearFilter = document.getElementById("yearFilter");
+        const typeFilter = document.getElementById("typeFilter");
         const hikeFilter = document.getElementById("hikeFilter");
 
         const activityCountElement = document.getElementById("activityCount");
@@ -501,30 +518,20 @@
         const loadingMessage = document.getElementById("loadingMessage");
         const errorMessage = document.getElementById("errorMessage");
 
-        /* =====================================================
-           Kontrola Leaflet
-           ===================================================== */
-
         if (typeof L === "undefined") {
             loadingMessage.style.display = "none";
-            errorMessage.textContent = "Knižnica Leaflet sa nenačítala. Skontrolujte pripojenie alebo blokovanie CDN.";
+            errorMessage.textContent = "Knižnica Leaflet sa nenačítala. Skontrolujte pripojenie.";
             errorMessage.style.display = "block";
             throw new Error("Leaflet library is not loaded.");
         }
 
-        /* =====================================================
-           Inicializácia mapy
-           ===================================================== */
-
         const map = L.map("map", {
             zoomControl: true,
             preferCanvas: true,
-            dragging: !L.Browser.mobile, // Na mobile sa aktivuje až po klepnutí, alebo štandardne s dvoma prstami
+            dragging: !L.Browser.mobile,
             tap: !L.Browser.mobile
         }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
 
-        // Ochrana proti uväzneniu prsta na mobile: Leaflet na mobile štandardne vyžaduje dva prsty na posun mapy, 
-        // čo zabraňuje zablokovaniu skrolovania celej Google Sites stránky.
         if (L.Browser.mobile && map.tapHold) {
             map.tapHold.disable();
         }
@@ -540,7 +547,6 @@
         const displayedLayers = L.featureGroup();
         displayedLayers.addTo(map);
 
-        /* Povoľ interakciu s mapou po kliknutí na náš prekryvný div */
         mapOverlay.addEventListener("click", function () {
             mapOverlay.classList.add("hidden");
             map.dragging.enable();
@@ -550,40 +556,32 @@
             if (map.boxZoom) map.boxZoom.enable();
         });
 
-        // Zo začiatku na mobile zakážeme pan/drag kým užívateľ vyslovene neťukne na prekryv
-        if (window.innerWidth <= 750) {
+        if (window.innerWidth <= 850) {
             map.dragging.disable();
             map.touchZoom.disable();
             map.doubleClickZoom.disable();
             map.scrollWheelZoom.disable();
         }
 
-        /* =====================================================
-           Ikona pre štartový bod
-           ===================================================== */
-
-        const startPinIcon = L.divIcon({
-            className: "startPin",
+        const hikingPinIcon = L.divIcon({
+            className: "startPinHiking",
             iconSize: [14, 14],
             iconAnchor: [7, 7],
             popupAnchor: [0, -7]
         });
 
-        /* =====================================================
-           Dáta aplikácie
-           ===================================================== */
+        const cyclingPinIcon = L.divIcon({
+            className: "startPinCycling",
+            iconSize: [14, 14],
+            iconAnchor: [7, 7],
+            popupAnchor: [0, -7]
+        });
 
         let activities = [];
         let activityLayerMap = new Map();
 
-        /* =====================================================
-           Formátovanie
-           ===================================================== */
-
         function escapeHtml(value) {
-            if (value === null || value === undefined) {
-                return "";
-            }
+            if (value === null || value === undefined) return "";
             return String(value)
                 .replaceAll("&", "&amp;")
                 .replaceAll("<", "&lt;")
@@ -593,13 +591,9 @@
         }
 
         function formatDate(dateValue) {
-            if (!dateValue) {
-                return "Neznámy";
-            }
+            if (!dateValue) return "Neznámy";
             const dateParts = String(dateValue).split("-");
-            if (dateParts.length !== 3) {
-                return String(dateValue);
-            }
+            if (dateParts.length !== 3) return String(dateValue);
             return dateParts[2] + ". " + dateParts[1] + ". " + dateParts[0];
         }
 
@@ -615,7 +609,12 @@
                 "mountain_biking": "Horská cyklistika",
                 "mountain biking": "Horská cyklistika"
             };
-            return translations[normalizedType] || type || "Neznámy";
+            return translations[normalizedType] || type || "Turistika";
+        }
+
+        function isCyclingActivity(type) {
+            const t = String(type || "").trim().toLowerCase();
+            return t.includes("cycl") || t.includes("bike") || t.includes("cyklistika");
         }
 
         function formatDistance(kilometers) {
@@ -639,15 +638,11 @@
             return hours.toLocaleString("sk-SK") + " h " + String(minutes).padStart(2, "0") + " min";
         }
 
-        /* =====================================================
-           Popup aktivity
-           ===================================================== */
-
         function createPopup(activity) {
             return `
                 <div class="activityPopup">
                     <div class="activityTitle">
-                        ${escapeHtml(activity.name || "Túra")}
+                        ${escapeHtml(activity.name || "Aktivita")}
                     </div>
                     <div class="activityDetail">
                         Dátum: <strong>${escapeHtml(formatDate(activity.date))}</strong>
@@ -670,10 +665,6 @@
                 </div>
             `;
         }
-
-        /* =====================================================
-           Filter rokov a výberu túry
-           ===================================================== */
 
         function populateYearFilter(years) {
             const sortedYears = [
@@ -706,7 +697,7 @@
         }
 
         function updateHikeDropdown(filteredActivities) {
-            hikeFilter.innerHTML = '<option value="all">Všetky túry</option>';
+            hikeFilter.innerHTML = '<option value="all">Všetky záznamy</option>';
 
             const sorted = [...filteredActivities].sort(function (a, b) {
                 return new Date(b.date || 0) - new Date(a.date || 0);
@@ -716,7 +707,7 @@
                 const option = document.createElement("option");
                 option.value = activity.file;
                 const formattedDate = formatDate(activity.date);
-                option.textContent = `${formattedDate} - ${activity.name || "Túra"}`;
+                option.textContent = `${formattedDate} - ${activity.name || "Aktivita"}`;
                 hikeFilter.appendChild(option);
             }
 
@@ -725,43 +716,50 @@
 
         function getFilteredActivities() {
             const selectedYear = yearFilter.value;
-            if (selectedYear === "all") {
-                return activities;
-            }
+            const selectedType = typeFilter.value;
+
             return activities.filter(function (activity) {
-                return String(activity.year) === selectedYear;
+                const matchesYear = (selectedYear === "all" || String(activity.year) === selectedYear);
+                
+                let matchesType = true;
+                const isCycling = isCyclingActivity(activity.type);
+                if (selectedType === "hiking") {
+                    matchesType = !isCycling;
+                } else if (selectedType === "cycling") {
+                    matchesType = isCycling;
+                }
+
+                return matchesYear && matchesType;
             });
         }
-
-        /* =====================================================
-           Súhrnné štatistiky
-           ===================================================== */
 
         function updateStatistics(selectedActivities) {
             let totalDistance = 0;
             let totalElevation = 0;
-            let totalDuration = 0;
+            let totalDuration = 5;
+            
+            const uniqueDates = new Set();
 
             for (const activity of selectedActivities) {
                 totalDistance += Number(activity.distanceKilometers) || 0;
                 totalElevation += Number(activity.elevationGainMeters) || 0;
                 totalDuration += Number(activity.durationSeconds) || 0;
+
+                if (activity.date) {
+                    uniqueDates.add(activity.date);
+                }
             }
 
-            activityCountElement.textContent = selectedActivities.length.toLocaleString("sk-SK");
+            const count = uniqueDates.size > 0 ? uniqueDates.size : selectedActivities.length;
+
+            activityCountElement.textContent = count.toLocaleString("sk-SK");
             totalDistanceElement.textContent = formatDistance(totalDistance);
             totalElevationElement.textContent = formatElevation(totalElevation);
             totalTimeElement.textContent = formatDuration(totalDuration);
         }
 
-        /* =====================================================
-           Kontrola súradníc
-           ===================================================== */
-
         function getValidCoordinates(activity) {
-            if (!Array.isArray(activity.coordinates)) {
-                return [];
-            }
+            if (!Array.isArray(activity.coordinates)) return [];
 
             return activity.coordinates
                 .filter(function (coordinate) {
@@ -776,10 +774,6 @@
                     return [Number(coordinate[0]), Number(coordinate[1])];
                 });
         }
-
-        /* =====================================================
-           Zobrazenie trás a pinov
-           ===================================================== */
 
         function renderSelectedActivities(updateDropdownOptions = true) {
             const selectedActivities = getFilteredActivities();
@@ -796,14 +790,17 @@
             for (const activity of selectedActivities) {
                 const coordinates = getValidCoordinates(activity);
 
-                if (coordinates.length < 2) {
-                    continue;
-                }
+                if (coordinates.length < 2) continue;
+
+                const isCycling = isCyclingActivity(activity.type);
+                const routeColor = isCycling ? CYCLING_COLOR : HIKING_COLOR;
+                const routeHoverColor = isCycling ? CYCLING_HOVER_COLOR : HIKING_HOVER_COLOR;
+                const pinIcon = isCycling ? cyclingPinIcon : hikingPinIcon;
 
                 const popupContent = createPopup(activity);
 
                 const route = L.polyline(coordinates, {
-                    color: ROUTE_COLOR,
+                    color: routeColor,
                     weight: 4,
                     opacity: 0.85,
                     lineCap: "round",
@@ -814,12 +811,12 @@
                 route.bindPopup(popupContent, { maxWidth: 300 });
 
                 const startPoint = coordinates[0];
-                const marker = L.marker(startPoint, { icon: startPinIcon });
+                const marker = L.marker(startPoint, { icon: pinIcon });
                 marker.bindPopup(popupContent, { maxWidth: 300 });
 
                 const highlightRoute = function () {
                     route.setStyle({
-                        color: ROUTE_HOVER_COLOR,
+                        color: routeHoverColor,
                         weight: 6,
                         opacity: 1
                     });
@@ -828,7 +825,7 @@
 
                 const unhighlightRoute = function () {
                     route.setStyle({
-                        color: ROUTE_COLOR,
+                        color: routeColor,
                         weight: 4,
                         opacity: 0.85
                     });
@@ -867,19 +864,11 @@
             }
         }
 
-        /* =====================================================
-           Chybová správa
-           ===================================================== */
-
         function showError(message) {
             loadingMessage.style.display = "none";
             errorMessage.textContent = message;
             errorMessage.style.display = "block";
         }
-
-        /* =====================================================
-           Inicializácia údajov
-           ===================================================== */
 
         async function initializeMap() {
             try {
@@ -916,16 +905,16 @@
 
             } catch (error) {
                 console.error(error);
-                showError("Nepodarilo sa načítať údaje o túrach. " + error.message);
+                showError("Nepodarilo sa načítať údaje. " + error.message);
                 activityCountElement.textContent = "Chyba";
             }
         }
 
-        /* =====================================================
-           Udalosti
-           ===================================================== */
-
         yearFilter.addEventListener("change", function () {
+            renderSelectedActivities(true);
+        });
+
+        typeFilter.addEventListener("change", function () {
             renderSelectedActivities(true);
         });
 
@@ -948,10 +937,6 @@
         window.addEventListener("resize", function () {
             map.invalidateSize();
         });
-
-        /* =====================================================
-           Spustenie
-           ===================================================== */
 
         initializeMap();
     </script>
