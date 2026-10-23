@@ -3,274 +3,1287 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>My Garmin Hikes</title>
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
+    <title>My Hikes</title>
+
+    <!-- Leaflet -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+        crossorigin=""
+    >
+
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        crossorigin=""
+    ></script>
+
+    <!-- Leaflet GPX plugin -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/2.1.2/gpx.min.js"
+    ></script>
+
 
     <style>
+
         html,
         body {
             margin: 0;
             padding: 0;
+            width: 100%;
             height: 100%;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f5f5;
         }
+
+
+        /* ---------------------------------------------------------
+           FILTER BAR
+           --------------------------------------------------------- */
+
+        #filterBar {
+            height: 60px;
+
+            display: flex;
+            align-items: center;
+            gap: 15px;
+
+            box-sizing: border-box;
+
+            padding: 10px 18px;
+
+            background: #ffffff;
+
+            border-bottom: 1px solid #dddddd;
+
+            position: relative;
+
+            z-index: 1000;
+        }
+
+
+        #filterBar label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+
+        #yearFilter {
+            padding: 7px 12px;
+
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+
+            background: #ffffff;
+
+            font-size: 14px;
+
+            cursor: pointer;
+        }
+
+
+        #activityCount {
+            font-size: 14px;
+            color: #666666;
+        }
+
+
+        /* ---------------------------------------------------------
+           MAP
+           --------------------------------------------------------- */
 
         #map {
             width: 100%;
-            height: 100vh;
+            height: calc(100vh - 60px);
         }
+
+
+        /* ---------------------------------------------------------
+           POPUP
+           --------------------------------------------------------- */
+
+        .activity-popup {
+            min-width: 220px;
+
+            font-family:
+                Arial,
+                Helvetica,
+                sans-serif;
+
+            line-height: 1.55;
+        }
+
+
+        .activity-title {
+            font-size: 16px;
+            font-weight: 700;
+
+            margin-bottom: 8px;
+        }
+
+
+        .activity-detail {
+            font-size: 13px;
+        }
+
+
+        .activity-detail strong {
+            font-weight: 600;
+        }
+
+
+        /* ---------------------------------------------------------
+           LOADING MESSAGE
+           --------------------------------------------------------- */
+
+        #loadingMessage {
+            position: absolute;
+
+            top: 80px;
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            z-index: 2000;
+
+            padding: 10px 18px;
+
+            border-radius: 6px;
+
+            background: rgba(255, 255, 255, 0.95);
+
+            box-shadow:
+                0 2px 8px rgba(0, 0, 0, 0.15);
+
+            font-size: 14px;
+        }
+
+
+        /* ---------------------------------------------------------
+           MOBILE
+           --------------------------------------------------------- */
+
+        @media (max-width: 600px) {
+
+            #filterBar {
+                height: 55px;
+                padding: 8px 10px;
+                gap: 8px;
+            }
+
+
+            #map {
+                height: calc(100vh - 55px);
+            }
+
+
+            #activityCount {
+                font-size: 12px;
+            }
+
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
-<div id="map"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- =========================================================
+         FILTER BAR
+         ========================================================= -->
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/2.1.2/gpx.min.js"></script>
+    <div id="filterBar">
 
-<script>
-
-    // ------------------------------------------------------------
-    // Create map
-    // ------------------------------------------------------------
-
-    const map = L.map("map").setView(
-        [47.8, 14.5],
-        7
-    );
+        <label for="yearFilter">
+            Year:
+        </label>
 
 
-    // ------------------------------------------------------------
-    // Background map
-    // ------------------------------------------------------------
+        <select id="yearFilter">
 
-    L.tileLayer(
-        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-            maxZoom: 19,
-            attribution:
-                '&copy; OpenStreetMap contributors'
-        }
-    ).addTo(map);
+            <option value="all">
+                All years
+            </option>
+
+        </select>
 
 
-    // ------------------------------------------------------------
-    // Group containing all hikes
-    // ------------------------------------------------------------
+        <span id="activityCount">
+            Loading...
+        </span>
 
-    const allHikes = L.featureGroup().addTo(map);
-
-
-    // ------------------------------------------------------------
-    // Generate route color
-    // ------------------------------------------------------------
-
-    const colors = [
-        "#e63946",
-        "#457b9d",
-        "#2a9d8f",
-        "#f4a261",
-        "#9b5de5",
-        "#0077b6",
-        "#588157",
-        "#ff006e"
-    ];
+    </div>
 
 
-    // ------------------------------------------------------------
-    // Load hike index
-    // ------------------------------------------------------------
 
-    fetch("hikes.json")
+    <!-- =========================================================
+         LOADING INDICATOR
+         ========================================================= -->
 
-        .then(response => {
+    <div id="loadingMessage">
 
-            if (!response.ok) {
-                throw new Error(
-                    "Could not load hikes.json"
-                );
+        Loading hikes...
+
+    </div>
+
+
+
+    <!-- =========================================================
+         MAP
+         ========================================================= -->
+
+    <div id="map"></div>
+
+
+
+    <script>
+
+        "use strict";
+
+
+        /* =========================================================
+           CONFIGURATION
+           ========================================================= */
+
+
+        const DEFAULT_CENTER = [
+            48.2,
+            16.0
+        ];
+
+
+        const DEFAULT_ZOOM = 7;
+
+
+        const ROUTE_COLORS = [
+
+            "#e63946",
+            "#457b9d",
+            "#2a9d8f",
+            "#f4a261",
+            "#9b5de5",
+            "#0077b6",
+            "#588157",
+            "#ff006e",
+            "#8338ec",
+            "#fb8500"
+
+        ];
+
+
+
+        /* =========================================================
+           MAP INITIALIZATION
+           ========================================================= */
+
+
+        const map = L.map(
+            "map",
+            {
+                zoomControl: true
+            }
+        ).setView(
+            DEFAULT_CENTER,
+            DEFAULT_ZOOM
+        );
+
+
+
+        /* =========================================================
+           BASE MAP
+           ========================================================= */
+
+
+        const openStreetMap = L.tileLayer(
+
+            "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+
+            {
+
+                maxZoom: 19,
+
+                attribution:
+                    '&copy; OpenStreetMap contributors'
+
             }
 
-            return response.json();
-
-        })
-
-        .then(hikes => {
-
-            let loaded = 0;
+        );
 
 
-            hikes.forEach((hike, index) => {
-
-                const color =
-                    colors[index % colors.length];
+        openStreetMap.addTo(map);
 
 
-                const track =
-                    new L.GPX(
-                        "gpx/" + hike.file,
-                        {
 
-                            async: true,
+        /* =========================================================
+           DOM ELEMENTS
+           ========================================================= */
 
-                            polyline_options: {
-                                color: color,
-                                weight: 4,
-                                opacity: 0.85
-                            },
 
-                            marker_options: {
+        const yearFilter =
+            document.getElementById(
+                "yearFilter"
+            );
 
-                                startIconUrl: null,
 
-                                endIconUrl: null,
+        const activityCount =
+            document.getElementById(
+                "activityCount"
+            );
 
-                                shadowUrl: null
 
-                            }
+        const loadingMessage =
+            document.getElementById(
+                "loadingMessage"
+            );
 
-                        }
+
+
+        /* =========================================================
+           APPLICATION DATA
+           ========================================================= */
+
+
+        let activities = [];
+
+
+        let activityLayers = [];
+
+
+
+        /* =========================================================
+           HTML ESCAPING
+           ========================================================= */
+
+
+        function escapeHtml(value) {
+
+            if (
+                value === null ||
+                value === undefined
+            ) {
+
+                return "";
+
+            }
+
+
+            return String(value)
+
+                .replaceAll(
+                    "&",
+                    "&amp;"
+                )
+
+                .replaceAll(
+                    "<",
+                    "&lt;"
+                )
+
+                .replaceAll(
+                    ">",
+                    "&gt;"
+                )
+
+                .replaceAll(
+                    '"',
+                    "&quot;"
+                )
+
+                .replaceAll(
+                    "'",
+                    "&#039;"
+                );
+
+        }
+
+
+
+        /* =========================================================
+           FORMAT ACTIVITY TYPE
+           ========================================================= */
+
+
+        function formatActivityType(type) {
+
+            if (!type) {
+                return "Unknown";
+            }
+
+
+            return String(type)
+
+                .replaceAll(
+                    "_",
+                    " "
+                )
+
+                .replace(
+                    /\b\w/g,
+                    character =>
+                        character.toUpperCase()
+                );
+
+        }
+
+
+
+        /* =========================================================
+           FORMAT DATE
+           ========================================================= */
+
+
+        function formatDate(date) {
+
+            if (!date) {
+                return "Unknown";
+            }
+
+
+            const parts =
+                date.split("-");
+
+
+            if (parts.length !== 3) {
+                return date;
+            }
+
+
+            return (
+                parts[2]
+                + "."
+                + parts[1]
+                + "."
+                + parts[0]
+            );
+
+        }
+
+
+
+        /* =========================================================
+           CREATE POPUP
+           ========================================================= */
+
+
+        function createPopup(
+            activity,
+            gpxLayer
+        ) {
+
+
+            const distanceMeters =
+                gpxLayer.get_distance();
+
+
+            const distanceKm =
+                (
+                    distanceMeters / 1000
+                ).toFixed(1);
+
+
+            const elevationGain =
+                Math.round(
+                    gpxLayer
+                        .get_elevation_gain()
+                );
+
+
+            const elevationLoss =
+                Math.round(
+                    gpxLayer
+                        .get_elevation_loss()
+                );
+
+
+            return `
+
+                <div class="activity-popup">
+
+                    <div class="activity-title">
+
+                        ${escapeHtml(
+                            activity.name
+                        )}
+
+                    </div>
+
+
+                    <div class="activity-detail">
+
+                        Date:
+                        <strong>
+
+                            ${escapeHtml(
+                                formatDate(
+                                    activity.date
+                                )
+                            )}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="activity-detail">
+
+                        Type:
+                        <strong>
+
+                            ${escapeHtml(
+                                formatActivityType(
+                                    activity.type
+                                )
+                            )}
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="activity-detail">
+
+                        Distance:
+                        <strong>
+
+                            ${distanceKm} km
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="activity-detail">
+
+                        Elevation gain:
+                        <strong>
+
+                            ↑ ${elevationGain} m
+
+                        </strong>
+
+                    </div>
+
+
+                    <div class="activity-detail">
+
+                        Elevation loss:
+                        <strong>
+
+                            ↓ ${elevationLoss} m
+
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }
+
+
+
+        /* =========================================================
+           POPULATE YEAR FILTER
+           ========================================================= */
+
+
+        function populateYearFilter(
+            years
+        ) {
+
+
+            /*
+             * Sort years newest first.
+             */
+
+            const sortedYears =
+                [...years].sort(
+                    (a, b) =>
+                        Number(b) - Number(a)
+                );
+
+
+            for (
+                const year
+                of sortedYears
+            ) {
+
+
+                const option =
+                    document.createElement(
+                        "option"
                     );
 
 
-                track.on(
-                    "loaded",
-                    function(event) {
-
-                        const gpx =
-                            event.target;
+                option.value =
+                    String(year);
 
 
-                        const name =
-                            gpx.get_name()
-                            || hike.name
-                            || hike.file;
+                option.textContent =
+                    String(year);
 
 
-                        const distance =
-                            (
-                                gpx.get_distance()
-                                / 1000
-                            ).toFixed(1);
+                yearFilter.appendChild(
+                    option
+                );
+
+            }
+
+        }
 
 
-                        const elevationGain =
-                            Math.round(
-                                gpx.get_elevation_gain()
-                            );
+
+        /* =========================================================
+           CHECK WHETHER ACTIVITY IS VISIBLE
+           ========================================================= */
 
 
-                        const elevationLoss =
-                            Math.round(
-                                gpx.get_elevation_loss()
-                            );
+        function isActivityVisible(
+            item
+        ) {
+
+            return map.hasLayer(
+                item.layer
+            );
+
+        }
 
 
-                        const popup = `
 
-                            <div style="
-                                min-width:180px;
-                                font-family:Arial;
-                            ">
-
-                            <strong>
-                                ${name}
-                            </strong>
-
-                            <br><br>
-
-                            Distance:
-                            <strong>
-                                ${distance} km
-                            </strong>
-
-                            <br>
-
-                            Elevation gain:
-                            <strong>
-                                ${elevationGain} m
-                            </strong>
-
-                            <br>
-
-                            Elevation loss:
-                            <strong>
-                                ${elevationLoss} m
-                            </strong>
-
-                            </div>
-
-                        `;
+        /* =========================================================
+           GET VISIBLE ACTIVITIES
+           ========================================================= */
 
 
-                        gpx.bindPopup(
-                            popup
+        function getVisibleActivities() {
+
+            return activityLayers.filter(
+                isActivityVisible
+            );
+
+        }
+
+
+
+        /* =========================================================
+           UPDATE ACTIVITY COUNTER
+           ========================================================= */
+
+
+        function updateActivityCount() {
+
+
+            const count =
+                getVisibleActivities()
+                    .length;
+
+
+            if (count === 1) {
+
+                activityCount.textContent =
+                    "1 activity";
+
+            } else {
+
+                activityCount.textContent =
+                    `${count} activities`;
+
+            }
+
+        }
+
+
+
+        /* =========================================================
+           FIT MAP TO CURRENTLY VISIBLE
+                getVisibleActivities();
+
+
+            if (
+                visible.length === 0
+            ) {
+
+                map.setView(
+                    DEFAULT_CENTER,
+                    DEFAULT_ZOOM
+                );
+
+                return;
+
+            }
+
+
+            const group =
+                L.featureGroup(
+
+                    visible.map(
+                        item =>
+                            item.layer
+                    )
+
+                );
+
+
+            const bounds =
+                group.getBounds();
+
+
+            if (
+                bounds.isValid()
+            ) {
+
+                map.fitBounds(
+
+                    bounds,
+
+                    {
+
+                        padding: [
+                            30,
+                            30
+                        ],
+
+                        maxZoom: 13
+
+                    }
+
+                );
+
+            }
+
+        }
+
+
+
+        /* =========================================================
+           APPLY YEAR FILTER
+           ========================================================= */
+
+
+        function applyYearFilter() {
+
+
+            const selectedYear =
+                yearFilter.value;
+
+
+            for (
+                const item
+                of activityLayers
+            ) {
+
+
+                const activityYear =
+                    item.activity.year;
+
+
+                const shouldBeVisible =
+
+                    selectedYear === "all"
+
+                    ||
+
+                    String(activityYear)
+                    ===
+                    selectedYear;
+
+
+                if (
+                    shouldBeVisible
+                ) {
+
+
+                    if (
+                        !map.hasLayer(
+                            item.layer
+                        )
+                    ) {
+
+                        item.layer.addTo(
+                            map
+                        );
+
+                    }
+
+
+                } else {
+
+
+                    if (
+                        map.hasLayer(
+                            item.layer
+                        )
+                    ) {
+
+                        map.removeLayer(
+                            item.layer
+                        );
+
+                    }
+
+                }
+
+            }
+
+
+            updateActivityCount();
+
+
+            fitMapToVisibleActivities();
+
+        }
+
+
+
+        /* =========================================================
+           LOAD ONE GPX ACTIVITY
+           ========================================================= */
+
+
+        function loadActivity(
+            activity,
+            index
+        ) {
+
+
+            return new Promise(
+
+                (
+                    resolve,
+                    reject
+                ) => {
+
+
+                    const color =
+
+                        ROUTE_COLORS[
+
+                            index
+                            %
+                            ROUTE_COLORS.length
+
+                        ];
+
+
+                    /*
+                     * encodeURIComponent is important because
+                     * Garmin filenames or other GPX filenames
+                     * could potentially contain spaces or
+                     * special characters.
+                     */
+
+
+                    const gpxUrl =
+
+                        "gpx/"
+                        +
+                        encodeURIComponent(
+                            activity.file
                         );
 
 
-                        loaded++;
+                    const gpxLayer =
+                        new L.GPX(
+
+                            gpxUrl,
+
+                            {
+
+                                async: true,
 
 
-                        // Once everything has loaded,
-                        // automatically fit map to hikes
+                                polyline_options: {
 
-                        if (
-                            loaded === hikes.length
-                            &&
-                            allHikes.getLayers().length > 0
-                        ) {
+                                    color:
+                                        color,
 
-                            map.fitBounds(
-                                allHikes.getBounds(),
-                                {
-                                    padding: [30, 30]
+                                    weight:
+                                        4,
+
+                                    opacity:
+                                        0.85,
+
+                                    lineCap:
+                                        "round"
+
+                                },
+
+
+                                marker_options: {
+
+                                    startIconUrl:
+                                        null,
+
+                                    endIconUrl:
+                                        null,
+
+                                    shadowUrl:
+                                        null
+
                                 }
+
+                            }
+
+                        );
+
+
+                    /* ---------------------------------------------
+                       GPX loaded successfully
+                       --------------------------------------------- */
+
+
+                    gpxLayer.on(
+
+                        "loaded",
+
+                        function(event) {
+
+
+                            const loadedLayer =
+                                event.target;
+
+
+                            loadedLayer.bindPopup(
+
+                                createPopup(
+                                    activity,
+                                    loadedLayer
+                                )
+
                             );
+
+
+                            activityLayers.push({
+
+                                activity:
+                                    activity,
+
+                                layer:
+                                    loadedLayer
+
+                            });
+
+
+                            resolve();
 
                         }
 
-                    }
-                );
+                    );
 
 
-                track.on(
-                    "error",
-                    function() {
 
-                        console.error(
-                            "Failed loading:",
-                            hike.file
-                        );
-
-                    }
-                );
+                    /* ---------------------------------------------
+                       GPX failed
+                       --------------------------------------------- */
 
 
-                track.addTo(
-                    allHikes
-                );
+                    gpxLayer.on(
 
-            });
+                        "error",
 
-        })
+                        function(error) {
 
-        .catch(error => {
 
-            console.error(
-                "Error loading hikes:",
-                error
+                            console.error(
+
+                                "Failed to load GPX:",
+
+                                activity.file,
+
+                                error
+
+                            );
+
+
+                            reject(error);
+
+                        }
+
+                    );
+
+
+
+                    /* ---------------------------------------------
+                       Put activity onto map
+                       --------------------------------------------- */
+
+
+                    gpxLayer.addTo(
+                        map
+                    );
+
+                }
+
             );
 
-        });
+        }
 
-</script>
+
+
+        /* =========================================================
+           LOAD HIKING DATA
+           ========================================================= */
+
+
+        async function initializeMap() {
+
+
+            try {
+
+
+                /* ---------------------------------------------
+                   Load hikes.json
+                   --------------------------------------------- */
+
+
+                const response =
+                    await fetch(
+                        "hikes.json"
+                    );
+
+
+                if (
+                    !response.ok
+                ) {
+
+                    throw new Error(
+
+                        "Could not load hikes.json. "
+                        +
+                        "HTTP status: "
+                        +
+                        response.status
+
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+
+                /* ---------------------------------------------
+                   Validate basic structure
+                   --------------------------------------------- */
+
+
+                if (
+                    !Array.isArray(
+                        data.activities
+                    )
+                ) {
+
+                    throw new Error(
+
+                        "hikes.json does not contain "
+                        +
+                        "an activities array."
+
+                    );
+
+                }
+
+
+
+                activities =
+                    data.activities;
+
+
+
+                /* ---------------------------------------------
+                   Determine years
+                   
+                   We do NOT completely depend on data.years.
+                   If it is missing, calculate years from
+                   individual activities.
+                   --------------------------------------------- */
+
+
+                let years;
+
+
+                if (
+                    Array.isArray(
+                        data.years
+                    )
+                ) {
+
+                    years =
+                        data.years;
+
+                } else {
+
+
+                    years = [
+
+                        ...new Set(
+
+                            activities
+
+                                .map(
+                                    activity =>
+                                        activity.year
+                                )
+
+                                .filter(
+                                    year =>
+                                        year !== null
+                                        &&
+                                        year !== undefined
+                                )
+
+                        )
+
+                    ];
+
+                }
+
+
+
+                populateYearFilter(
+                    years
+                );
+
+
+
+                /* ---------------------------------------------
+                   Load every GPX
+                   --------------------------------------------- */
+
+
+                const results =
+                    await Promise.allSettled(
+
+                        activities.map(
+
+                            (
+                                activity,
+                                index
+                            ) =>
+
+                                loadActivity(
+                                    activity,
+                                    index
+                                )
+
+                        )
+
+                    );
+
+
+
+                /* ---------------------------------------------
+                   Check failed GPX files
+                   --------------------------------------------- */
+
+
+                const failed =
+                    results.filter(
+
+                        result =>
+                            result.status
+                            ===
+                            "rejected"
+
+                    );
+
+
+                if (
+                    failed.length > 0
+                ) {
+
+                    console.warn(
+
+                        failed.length
+                        +
+                        " GPX file(s) failed to load."
+
+                    );
+
+                }
+
+
+
+                /* ---------------------------------------------
+                   Initial display
+                   --------------------------------------------- */
+
+
+                updateActivityCount();
+
+
+                fitMapToVisibleActivities();
+
+
+
+                /* ---------------------------------------------
+                   Remove loading message
+                   --------------------------------------------- */
+
+
+                loadingMessage.style.display =
+                    "none";
+
+
+            }
+
+
+            catch (error) {
+
+
+                console.error(
+                    error
+                );
+
+
+                loadingMessage.textContent =
+                    "Unable to load hiking data.";
+
+
+                activityCount.textContent =
+                    "Loading failed";
+
+            }
+
+        }
+
+
+
+        /* =========================================================
+           EVENTS
+           ========================================================= */
+
+
+        yearFilter.addEventListener(
+
+            "change",
+
+            applyYearFilter
+
+        );
+
+
+
+        /* =========================================================
+           START APPLICATION
+           ========================================================= */
+
+
+        initializeMap();
+
+
+    </script>
 
 </body>
 
