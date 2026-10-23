@@ -1,98 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hiking Club Interactive Map</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body, html { height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        
-        #layout { display: flex; height: 100vh; width: 100vw; }
-        #sidebar { width: 300px; background: #f8f9fa; border-right: 1px solid #dee2e6; padding: 16px; overflow-y: auto; }
-        #map { flex: 1; height: 100%; }
-        
-        h2 { font-size: 1.2rem; margin-bottom: 12px; color: #2c3e50; }
-        .hike-card { background: #ffffff; border: 1px solid #e9ecef; border-radius: 6px; padding: 12px; margin-bottom: 10px; cursor: pointer; transition: all 0.2s; }
-        .hike-card:hover { border-color: #3498db; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
-        .hike-title { font-weight: bold; font-size: 0.95rem; color: #2c3e50; }
-        .hike-meta { font-size: 0.8rem; color: #6c757d; margin-top: 4px; }
 
-        @media (max-width: 600px) {
-            #layout { flex-direction: column-reverse; }
-            #sidebar { width: 100%; height: 35%; }
-            #map { width: 100%; height: 65%; }
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Garmin Hikes</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
         }
     </style>
 </head>
+
 <body>
 
-<div id="layout">
-    <div id="sidebar">
-        <h2>Club Trails</h2>
-        <div id="trail-list"></div>
-    </div>
-    <div id="map"></div>
-</div>
+<div id="map"></div>
 
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Leaflet GPX Plugin -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/2.1.2/gpx.min.js"></script>
 
 <script>
-    // 1. Initialize Map
-    const map = L.map('map').setView([47.3769, 8.5417], 10); // Default center coordinates
 
-    // 2. Add OpenTopoMap Tile Layer
-    L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        maxZoom: 17,
-        attribution: 'Map data: &copy; OpenStreetMap, SRTM | Style: &copy; OpenTopoMap'
-    }).addTo(map);
+    // ------------------------------------------------------------
+    // Create map
+    // ------------------------------------------------------------
 
-    // 3. Define Your GPX Files Here
-    const hikes = [
-        { name: "Panorama Trail", file: "gpx/trail-1.gpx", color: "#e74c3c" },
-        { name: "Mountain Loop", file: "gpx/trail-2.gpx", color: "#2ecc71" },
-        { name: "Forest Nature Walk", file: "gpx/trail-3.gpx", color: "#3498db" }
+    const map = L.map("map").setView(
+        [47.8, 14.5],
+        7
+    );
+
+
+    // ------------------------------------------------------------
+    // Background map
+    // ------------------------------------------------------------
+
+    L.tileLayer(
+        "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 19,
+            attribution:
+                '&copy; OpenStreetMap contributors'
+        }
+    ).addTo(map);
+
+
+    // ------------------------------------------------------------
+    // Group containing all hikes
+    // ------------------------------------------------------------
+
+    const allHikes = L.featureGroup().addTo(map);
+
+
+    // ------------------------------------------------------------
+    // Generate route color
+    // ------------------------------------------------------------
+
+    const colors = [
+        "#e63946",
+        "#457b9d",
+        "#2a9d8f",
+        "#f4a261",
+        "#9b5de5",
+        "#0077b6",
+        "#588157",
+        "#ff006e"
     ];
 
-    const boundsGroup = L.featureGroup();
 
-    // 4. Load GPX Files and Build Sidebar
-    hikes.forEach((hike, index) => {
-        const gpxLayer = new L.GPX(hike.file, {
-            async: true,
-            polyline_options: { color: hike.color, weight: 4, opacity: 0.85 }
-        }).on('loaded', function(e) {
-            const gpx = e.target;
-            const distKm = (gpx.get_distance() / 1000).toFixed(1);
-            const eleGain = Math.round(gpx.get_elevation_gain());
+    // ------------------------------------------------------------
+    // Load hike index
+    // ------------------------------------------------------------
 
-            // Add marker/track bounds
-            boundsGroup.addLayer(gpx);
-            map.fitBounds(boundsGroup.getBounds());
+    fetch("hikes.json")
 
-            // Add item to sidebar
-            const container = document.getElementById('trail-list');
-            const card = document.createElement('div');
-            card.className = 'hike-card';
-            card.innerHTML = `
-                <div class="hike-title" style="border-left: 4px solid ${hike.color}; padding-left: 8px;">${hike.name}</div>
-                <div class="hike-meta">Distance: ${distKm} km | Elev Gain: ${eleGain} m</div>
-            `;
-            
-            card.onclick = function() {
-                map.fitBounds(gpx.getBounds(), { padding: [30, 30] });
-            };
+        .then(response => {
 
-            container.appendChild(card);
-        }).addTo(map);
-    });
+            if (!response.ok) {
+                throw new Error(
+                    "Could not load hikes.json"
+                );
+            }
+
+            return response.json();
+
+        })
+
+        .then(hikes => {
+
+            let loaded = 0;
+
+
+            hikes.forEach((hike, index) => {
+
+                const color =
+                    colors[index % colors.length];
+
+
+                const track =
+                    new L.GPX(
+                        "gpx/" + hike.file,
+                        {
+
+                            async: true,
+
+                            polyline_options: {
+                                color: color,
+                                weight: 4,
+                                opacity: 0.85
+                            },
+
+                            marker_options: {
+
+                                startIconUrl: null,
+
+                                endIconUrl: null,
+
+                                shadowUrl: null
+
+                            }
+
+                        }
+                    );
+
+
+                track.on(
+                    "loaded",
+                    function(event) {
+
+                        const gpx =
+                            event.target;
+
+
+                        const name =
+                            gpx.get_name()
+                            || hike.name
+                            || hike.file;
+
+
+                        const distance =
+                            (
+                                gpx.get_distance()
+                                / 1000
+                            ).toFixed(1);
+
+
+                        const elevationGain =
+                            Math.round(
+                                gpx.get_elevation_gain()
+                            );
+
+
+                        const elevationLoss =
+                            Math.round(
+                                gpx.get_elevation_loss()
+                            );
+
+
+                        const popup = `
+
+                            <div style="
+                                min-width:180px;
+                                font-family:Arial;
+                            ">
+
+                            <strong>
+                                ${name}
+                            </strong>
+
+                            <br><br>
+
+                            Distance:
+                            <strong>
+                                ${distance} km
+                            </strong>
+
+                            <br>
+
+                            Elevation gain:
+                            <strong>
+                                ${elevationGain} m
+                            </strong>
+
+                            <br>
+
+                            Elevation loss:
+                            <strong>
+                                ${elevationLoss} m
+                            </strong>
+
+                            </div>
+
+                        `;
+
+
+                        gpx.bindPopup(
+                            popup
+                        );
+
+
+                        loaded++;
+
+
+                        // Once everything has loaded,
+                        // automatically fit map to hikes
+
+                        if (
+                            loaded === hikes.length
+                            &&
+                            allHikes.getLayers().length > 0
+                        ) {
+
+                            map.fitBounds(
+                                allHikes.getBounds(),
+                                {
+                                    padding: [30, 30]
+                                }
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                track.on(
+                    "error",
+                    function() {
+
+                        console.error(
+                            "Failed loading:",
+                            hike.file
+                        );
+
+                    }
+                );
+
+
+                track.addTo(
+                    allHikes
+                );
+
+            });
+
+        })
+
+        .catch(error => {
+
+            console.error(
+                "Error loading hikes:",
+                error
+            );
+
+        });
+
 </script>
+
 </body>
+
 </html>
