@@ -1,8 +1,8 @@
-# Public Hikes & GPX Tracks
+# KST Sokolka Selec – Public Hikes & GPX Tracks
 
 
 
-A clean, interactive web collection of public hiking routes and `.gpx` track files. 
+A clean, interactive web collection of public hiking routes and `.gpx` track files created for the local hiking club **KST Sokolka Selec**.
 
 
 
@@ -82,9 +82,11 @@ If you want to use these tracks on your own GPS device or navigation app:
 
 
 
-## License & Permissions
+## About & Permissions
 
 
+
+* **Club:** Maintained for **KST Sokolka Selec** hiking activities.
 
 * **Access:** This repository is intended strictly as a static read-only showcase and storage host. 
 
