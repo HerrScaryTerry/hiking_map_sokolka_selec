@@ -22,15 +22,24 @@
 
     <style>
         :root {
+            /* Palette extracted from your website */
+            --site-dark-green: #2b4343;
+            --site-header-bg: #354f4f;
+            --site-peach: #f4a27e;
+            --site-peach-hover: #e88d67;
+            
             --hiking-color: #d62828;
             --hiking-hover-color: #9d0208;
             --cycling-color: #1d4ed8;
             --cycling-hover-color: #1e40af;
-            --background-color: #f3f5f7;
+            
+            --background-color: #2b4343;
             --card-background: #ffffff;
-            --border-color: #dde2e7;
+            --card-subtle-bg: #f8fafb;
+            --border-color: #d1d8dd;
             --primary-text: #1f2933;
             --secondary-text: #637381;
+            --header-text: #ffffff;
             --error-background: #fff1f2;
             --error-border: #dc2626;
             --error-text: #991b1b;
@@ -65,34 +74,36 @@
 
         #mobileNoticeBanner {
             display: none;
-            background: #fff3cd;
-            color: #856404;
+            background: var(--site-peach);
+            color: #2b4343;
             padding: 8px 12px;
             font-size: 12px;
             text-align: center;
-            border-bottom: 1px solid #ffeeba;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
             flex: 0 0 auto;
             z-index: 1001;
+            font-weight: 600;
         }
 
         #mobileNoticeBanner a {
-            color: #533f03;
+            color: #1f2933;
             font-weight: 700;
             text-decoration: underline;
             margin-left: 4px;
         }
 
         /* =====================================================
-           Hlavička
+           Hlavička (Matched to Website Theme)
            ===================================================== */
 
         #header {
             flex: 0 0 auto;
             padding: 12px 16px;
-            background: var(--card-background);
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            background: var(--site-header-bg);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
             z-index: 1000;
+            color: var(--header-text);
         }
 
         #headerTop {
@@ -110,6 +121,7 @@
             line-height: 1.2;
             font-weight: 700;
             white-space: nowrap;
+            color: var(--header-text);
         }
 
         #filtersWrapper {
@@ -128,12 +140,13 @@
         .filterGroup label {
             font-size: 13px;
             font-weight: 700;
+            color: var(--header-text);
         }
 
         select.appSelect {
             height: 36px;
             padding: 6px 10px;
-            border: 1px solid #b8c1ca;
+            border: 1px solid #7c9494;
             border-radius: 6px;
             background: #ffffff;
             color: var(--primary-text);
@@ -142,8 +155,8 @@
         }
 
         select.appSelect:focus {
-            outline: 2px solid rgba(214, 40, 40, 0.2);
-            border-color: var(--hiking-color);
+            outline: 2px solid var(--site-peach);
+            border-color: var(--site-peach);
         }
 
         #yearFilter {
@@ -174,7 +187,8 @@
             padding: 8px 10px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            background: #f8fafb;
+            background: var(--card-background);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .statisticLabel {
@@ -220,7 +234,7 @@
             display: none;
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.35);
+            background: rgba(43, 67, 67, 0.55);
             color: #ffffff;
             z-index: 2500;
             justify-content: center;
@@ -229,7 +243,7 @@
             padding: 20px;
             font-weight: 700;
             font-size: 15px;
-            backdrop-filter: blur(1px);
+            backdrop-filter: blur(2px);
             cursor: pointer;
             transition: background 0.3s ease;
         }
@@ -736,7 +750,7 @@
         function updateStatistics(selectedActivities) {
             let totalDistance = 0;
             let totalElevation = 0;
-            let totalDuration = 5;
+            let totalDuration = 0;
             
             const uniqueDates = new Set();
 
